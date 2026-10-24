@@ -64,11 +64,15 @@ export default {
       system,
       messages
     };
+    // ניקוי רווחים, ירידות שורה ומירכאות שנכנסו בטעות בהדבקת המפתח
+    const key = String(env.ANTHROPIC_API_KEY || '').replace(/[\s"'`]/g, '');
+    if (!key) return err('KEY_MISSING: לא הוגדר מפתח בשרת', 500, origin);
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify(payload)
     });
+    if (r.status === 401) return err(`KEY_BAD: המפתח לא תקין (אורך ${key.length}, מתחיל ב-${key.slice(0, 7)})`, 500, origin);
     return new Response(await r.text(), { status: r.status, headers: { ...cors(origin), 'Content-Type': 'application/json' } });
   }
 };
