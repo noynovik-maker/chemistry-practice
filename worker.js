@@ -1,10 +1,13 @@
-// Cloudflare Worker – שרת מתווך לד"ר אטום / גלי-בוט / בדיקת בגרות
-// המפתח נשמר כ-Secret בשם ANTHROPIC_API_KEY (לא בקוד!)
-// הגבלות: רק מהאתר של האפליקציה, רק מודל אחד, תקרת אורך, ותקרת בקשות לכל כתובת IP ביום.
-const ALLOWED_ORIGINS = ['https://noynovik-maker.github.io'];   // לעדכן אם שם המשתמש/הדומיין שונה
-const MODEL = 'claude-sonnet-4-20250514';
+// Cloudflare Worker – שרת מתווך לד"ר אטום / גלי-בוט / בדיקת בגרות (פיילוט)
+// ─ המפתח נשמר כ-Secret בשם ANTHROPIC_API_KEY (לא בקוד!)
+// ─ קודי כיתה מורשים: משתנה סביבה CLASS_CODES, מופרדים בפסיק (למשל: KIMIA10A,KIMIA11B)
+// ─ מכסות (דורש KV בשם LIMITS): לכל תלמיד ביום, ולכל כיתה ביום
+const ALLOWED_ORIGINS = ['https://noynovik-maker.github.io'];
+const MODEL_CHAT  = 'claude-haiku-5-5';    // ד"ר אטום וגלי-בוט – זול ומהיר
+const MODEL_GRADE = 'claude-sonnet-5-5';   // בדיקת שאלות פתוחות בבגרות – מדויק יותר
 const MAX_TOKENS = 1500;
-const DAILY_LIMIT_PER_IP = 80;
+const DAILY_PER_STUDENT = 25;
+const DAILY_PER_CLASS = 600;
 
 function cors(origin){
   return {
@@ -14,30 +17,52 @@ function cors(origin){
     'Access-Control-Max-Age': '86400'
   };
 }
+function json(o, s, origin){ return new Response(JSON.stringify(o), { status: s, headers: { ...cors(origin), 'Content-Type': 'application/json' } }); }
+const err = (msg, s, origin) => json({ error: { message: msg } }, s, origin);
+
+async function bump(env, key, limit){
+  const n = parseInt(await env.LIMITS.get(key) || '0', 10);
+  if (n >= limit) return false;
+  await env.LIMITS.put(key, String(n + 1), { expirationTtl: 90000 });
+  return true;
+}
 
 export default {
   async fetch(req, env) {
     const origin = req.headers.get('Origin') || '';
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });
-    if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: cors(origin) });
-    if (!ALLOWED_ORIGINS.includes(origin)) return new Response('Forbidden', { status: 403, headers: cors(origin) });
-
-    // תקרה יומית לכל IP (דורש KV בשם LIMITS; אם לא הוגדר – מדלגים)
-    if (env.LIMITS) {
-      const ip = req.headers.get('CF-Connecting-IP') || 'x';
-      const key = ip + ':' + new Date().toISOString().slice(0, 10);
-      const n = parseInt(await env.LIMITS.get(key) || '0', 10);
-      if (n >= DAILY_LIMIT_PER_IP) return json({ error: { message: 'הגעת למכסה היומית של שאלות ל-AI. נסה שוב מחר.' } }, 429, origin);
-      await env.LIMITS.put(key, String(n + 1), { expirationTtl: 90000 });
-    }
+    if (req.method !== 'POST') return err('Method not allowed', 405, origin);
+    if (!ALLOWED_ORIGINS.includes(origin)) return err('Forbidden', 403, origin);
 
     let body;
-    try { body = await req.json(); } catch { return json({ error: { message: 'bad json' } }, 400, origin); }
+    try { body = await req.json(); } catch { return err('bad json', 400, origin); }
+
+    // קוד כיתה + כינוי
+    const codes = String(env.CLASS_CODES || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    const code = String(body.classCode || '').trim().toUpperCase();
+    const student = String(body.student || '').trim().slice(0, 40);
+    if (!codes.includes(code)) return err('NO_CLASS_CODE', 401, origin);
+    if (!student) return err('NO_STUDENT', 401, origin);
+
+    // מכסות יומיות
+    if (env.LIMITS) {
+      const day = new Date().toISOString().slice(0, 10);
+      if (!await bump(env, `c:${code}:${day}`, DAILY_PER_CLASS)) return err('הכיתה הגיעה למכסה היומית של שאלות ל-AI. נסו שוב מחר.', 429, origin);
+      if (!await bump(env, `s:${code}:${student}:${day}`, DAILY_PER_STUDENT)) return err(`הגעת למכסה היומית (${DAILY_PER_STUDENT} שאלות). נסה שוב מחר.`, 429, origin);
+    }
+
+    let messages = Array.isArray(body.messages) ? body.messages.slice(-16) : [];
+    while (messages.length && messages[0].role !== 'user') messages.shift();   // ה-API דורש שהראשונה תהיה של המשתמש
+    if (!messages.length) return err('empty', 400, origin);
+
+    const grading = body.purpose === 'grade';
+    // prompt caching: ההנחיות הקבועות נשמרות אצל Anthropic לכמה דקות, וקריאה חוזרת שלהן זולה בהרבה
+    const system = [{ type: 'text', text: String(body.system || '').slice(0, 30000), cache_control: { type: 'ephemeral' } }];
     const payload = {
-      model: MODEL,
+      model: grading ? MODEL_GRADE : MODEL_CHAT,
       max_tokens: Math.min(body.max_tokens || 800, MAX_TOKENS),
-      system: String(body.system || '').slice(0, 20000),
-      messages: (body.messages || []).slice(-20)
+      system,
+      messages
     };
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -47,4 +72,3 @@ export default {
     return new Response(await r.text(), { status: r.status, headers: { ...cors(origin), 'Content-Type': 'application/json' } });
   }
 };
-function json(o, s, origin){ return new Response(JSON.stringify(o), { status: s, headers: { ...cors(origin), 'Content-Type': 'application/json' } }); }

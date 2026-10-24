@@ -1180,7 +1180,11 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
       <div class="res-body"><div class="res-title">PubChem – מאגר המולקולות הגדול בעולם</div><div class="res-desc">נוסחה מולקולרית, מסה מולרית, נקודת רתיחה ומבנה לכל חומר. שימושי לחישובים ולמבנה וקישור.</div></div>
       <div class="res-arrow">↗</div>
     </a>
-    <div class="res-card" style="cursor:default;flex-wrap:wrap">
+    <div class="res-card" style="cursor:default" id="classCodeCard" onclick="try{localStorage.removeItem('chem_class_code')}catch(e){};ensureClassId()">
+      <div class="res-icon" style="background:linear-gradient(135deg,#0e7490,#22d3ee);">🔐</div>
+      <div class="res-body"><div class="res-title">קוד כיתה לעוזרי ה-AI</div><div class="res-desc">להחלפת קוד הכיתה או הכינוי.</div></div>
+    </div>
+    <div class="res-card" id="apiKeyCard" style="cursor:default;flex-wrap:wrap">
       <div class="res-icon" style="background:linear-gradient(135deg,#334155,#64748b);">🔑</div>
       <div class="res-body"><div class="res-title">הגדרות בינה מלאכותית (למורה)</div><div class="res-desc">מפתח API של Anthropic לד"ר אטום, גלי-בוט ובדיקת הבגרות. נשמר רק בדפדפן של מכשיר זה.</div></div>
       <div style="width:100%;display:flex;gap:8px;margin-top:6px"><input id="apiKeyInput" type="password" placeholder="sk-ant-…" style="flex:1;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:8px;font-family:monospace;direction:ltr"><button class="tbtn tbtn-play" onclick="(function(){try{localStorage.setItem('chem_api_key',document.getElementById('apiKeyInput').value.trim());alert('נשמר');}catch(e){alert('לא ניתן לשמור בדפדפן זה');}})()">שמור</button></div>
@@ -3538,12 +3542,13 @@ async function sendAI(){
   }
   systemPrompt += atomActivitySummary();
   try{
+    if(!(await ensureClassId())){removeTyping();addMsg('כדי לדבר עם ד"ר אטום צריך קוד כיתה מהמורה.','bot');aiLoading=false;document.getElementById('aiSend').disabled=false;return;}
     const res=await fetch(aiEndpoint(),{
       method:'POST',headers:aiHeaders(),
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:systemPrompt,messages:aiHistory})
+      body:JSON.stringify(aiBody({max_tokens:800,system:systemPrompt,messages:aiHistory},'chat'))
     });
-    const data=await res.json();
-    const reply=data.content?.[0]?.text||'מצטער, לא הצלחתי לקבל תשובה. נסה שוב.';
+    const data=await res.json(); aiCheckErr(data);
+    const reply=data.error?('⚠️ '+aiErrMsg(data)):data.content?.[0]?.text||'מצטער, לא הצלחתי לקבל תשובה. נסה שוב.';
     removeTyping();addMsg(reply,'bot');aiHistory.push({role:'assistant',content:reply});
   }catch(e){removeTyping();addMsg('שגיאת תקשורת. בדוק חיבור לאינטרנט ונסה שוב.','bot');}
   aiLoading=false;document.getElementById('aiSend').disabled=false;input.focus();
@@ -4643,12 +4648,11 @@ ${wrong.length>0 ? `\nשאלות שנענו שגוי:\n${wrongSummary}` : '\nה�
 
   try {
     const res = await fetch(aiEndpoint(),{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:400,
+      method:'POST', headers:aiHeaders(),
+      body: JSON.stringify(aiBody({ max_tokens:400,
         system:'אתה מורה כימיה ישראלי חם ומעודד. כותב הערכות מעצבות קצרות בעברית לתלמידי כיתה י.',
         messages:[{role:'user',content:prompt}]
-      })
+      },'chat'))
     });
     const data = await res.json();
     const reply = data.content?.[0]?.text || '';
@@ -4826,19 +4830,20 @@ async function galiCallAI(){
   galiLoading=true;
   const sendBtn=document.getElementById('gali-send');
   if(sendBtn) sendBtn.disabled=true;
+  if(!(await ensureClassId())){galiAddMsg('כדי לדבר עם גלי-בוט צריך קוד כיתה מהמורה.','bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
   galiShowTyping();
   try{
     const res=await fetch(aiEndpoint(),{
       method:'POST',headers:aiHeaders(),
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:600,
+      body:JSON.stringify(aiBody({
+        max_tokens:600,
         system:GALI_SYSTEM+`\n\nהנושא: ${galiTopic}\nמושגים: ${(galiTopicInfo(galiTopic).concepts||[]).join(' | ')}\nכללים: ${galiTopicInfo(galiTopic).rules||''}\nשלב: ${galiStage}/5`,
         messages:galiHistory
-      })
+      },'chat'))
     });
     const data=await res.json();
     galiRemoveTyping();
-    if(data.error){galiAddMsg('שגיאה: '+data.error.message,'bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
+    if(data.error){aiCheckErr(data);galiAddMsg('⚠️ '+aiErrMsg(data),'bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
     const reply=data.content?.[0]?.text||'';
     if(!reply){galiAddMsg('לא קיבלתי תשובה — נסה שוב.','bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
     galiHistory.push({role:'assistant',content:reply});
@@ -5288,6 +5293,7 @@ function goHubRoot(){
   setBottomNav('home');
 }
 function openResources(){
+  {const a=document.getElementById('apiKeyCard'),b=document.getElementById('classCodeCard');if(a)a.style.display=AI_PROXY_URL?'none':'';if(b)b.style.display=AI_PROXY_URL?'':'none';}
   try{const k=localStorage.getItem('chem_api_key');const el=document.getElementById('apiKeyInput');if(el&&k)el.value=k;}catch(e){}
   ['radio-screen','mol-screen','radius-screen','ion-screen','coval-screen','polar-screen','galiq-screen','chapter-screen','hub-screen','gq-screen','diag-screen'].forEach(hide);
   ['radioNav','molNav','radNav','ionNav','covalNav','polarNav','galiqNav'].forEach(n=>{const e=document.getElementById(n); if(e) e.classList.remove('show');});
@@ -7509,9 +7515,48 @@ function aiHeaders(){
   if(k){hd['x-api-key']=k;hd['anthropic-version']='2023-06-01';hd['anthropic-dangerous-direct-browser-access']='true';}
   return hd;
 }
-async function callClaude(system,messages,max_tokens){
-  const res=await fetch(aiEndpoint(),{method:'POST',headers:aiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:max_tokens||1200,system,messages})});
-  const data=await res.json(); if(data.error) throw new Error(data.error.message||'API error');
+// מודלים: שיחה = מהיר וזול, בדיקת בגרות = מדויק. מול השרת המתווך – השרת בוחר את המודל לפי purpose.
+const AI_MODEL_CHAT='claude-haiku-5-5', AI_MODEL_GRADE='claude-sonnet-5-5';
+function aiClass(){try{return {code:localStorage.getItem('chem_class_code')||'',student:localStorage.getItem('chem_student')||''};}catch(e){return {code:'',student:''};}}
+function aiBody(o,purpose){
+  if(AI_PROXY_URL){const c=aiClass();return {...o,purpose,classCode:c.code,student:c.student};}
+  return {...o,model:purpose==='grade'?AI_MODEL_GRADE:AI_MODEL_CHAT};
+}
+function aiErrMsg(d){const m=(d&&d.error&&d.error.message)||'';
+  if(m==='NO_CLASS_CODE')return 'קוד הכיתה לא מוכר. בדוק אותו מול המורה.';
+  if(m==='NO_STUDENT')return 'חסר כינוי תלמיד.';
+  return m||'שגיאה בשרת.';}
+function aiCheckErr(d){const m=d&&d.error&&d.error.message;if(m==='NO_CLASS_CODE'||m==='NO_STUDENT'){try{localStorage.removeItem('chem_class_code');}catch(e){}}}
+// חלון קוד כיתה – פעם אחת במכשיר. כינוי בלבד, בלי שם מלא (פרטיות).
+function ensureClassId(){
+  if(!AI_PROXY_URL)return Promise.resolve(true);
+  const c=aiClass(); if(c.code&&c.student)return Promise.resolve(true);
+  return new Promise(res=>{
+    let ov=document.getElementById('classIdOv'); if(ov)ov.remove();
+    ov=document.createElement('div'); ov.id='classIdOv';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(5,5,20,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+    ov.innerHTML=`<div style="background:var(--panel,#1a1a2e);border:1px solid var(--border,#333);border-radius:18px;padding:20px;max-width:360px;width:100%;color:var(--text,#fff)">
+      <div style="font-size:1.15rem;font-weight:800;margin-bottom:6px">🔐 כניסה לעוזרי ה-AI</div>
+      <div style="font-size:.88rem;opacity:.8;margin-bottom:12px">את קוד הכיתה מקבלים מהמורה. בכינוי אל תכתוב שם מלא – מספיק שם פרטי או כינוי.</div>
+      <input id="classIdCode" placeholder="קוד כיתה" value="${c.code}" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--border,#444);background:var(--bg,#0f0f1e);color:inherit;direction:ltr;text-transform:uppercase">
+      <input id="classIdName" placeholder="כינוי" maxlength="20" value="${c.student}" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px;border-radius:10px;border:1px solid var(--border,#444);background:var(--bg,#0f0f1e);color:inherit">
+      <div style="display:flex;gap:8px"><button id="classIdOk" class="tbtn tbtn-play" style="flex:1">כניסה</button><button id="classIdNo" class="tbtn" style="flex:1">לא עכשיו</button></div></div>`;
+    document.body.appendChild(ov);
+    const done=v=>{ov.remove();res(v);};
+    ov.querySelector('#classIdNo').onclick=()=>done(false);
+    ov.querySelector('#classIdOk').onclick=()=>{
+      const code=ov.querySelector('#classIdCode').value.trim().toUpperCase(), st=ov.querySelector('#classIdName').value.trim();
+      if(!code||!st){ov.querySelector(code?'#classIdName':'#classIdCode').focus();return;}
+      try{localStorage.setItem('chem_class_code',code);localStorage.setItem('chem_student',st);}catch(e){}
+      done(true);
+    };
+    setTimeout(()=>ov.querySelector('#classIdCode').focus(),50);
+  });
+}
+async function callClaude(system,messages,max_tokens,purpose){
+  if(!(await ensureClassId())) throw new Error('נדרש קוד כיתה');
+  const res=await fetch(aiEndpoint(),{method:'POST',headers:aiHeaders(),body:JSON.stringify(aiBody({max_tokens:max_tokens||1200,system,messages},purpose||'chat'))});
+  const data=await res.json(); if(data.error){aiCheckErr(data);throw new Error(aiErrMsg(data));}
   return data.content?.[0]?.text||'';
 }
 
@@ -7695,7 +7740,7 @@ async function examGradeOpen(it){
   const sys=`אתה בודק בחינות בגרות בכימיה 5 יח"ל (שאלון 037381), לפי תוכנית הלימודים תשפ"ז (70% – בגרות חיצונית). בדוק כל סעיף לפי הפתרון הרשמי כשקיים; אל תדרוש מהתלמיד מלל מעבר לנדרש (מדיניות צמצום מלל). בחישובים דרוש יחידות. ניסוחים כימיים: בדוק נכונות הנוסחאות, המקדמים, מצבי הצבירה והמטענים. החזר JSON בלבד במבנה:
 {"subs":[{"i":1,"score":0-100,"feedback":"משפט-שניים: מה נכון, מה חסר, מה הטעות"}],"summary":"2-3 משפטים על הביצוע בשאלה","mistakes":["תפיסה שגויה / טעות אופיינית אם זוהתה"]}`;
   const user=`שאלה מבגרות: ${o.src}\n${o.ctx?'הקשר: '+o.ctx+'\n':''}\n${subs}${it.egbDesc?'\n\n'+it.egbDesc:''}`;
-  const txt=await callClaude(sys,[{role:'user',content:user}],1500);
+  const txt=await callClaude(sys,[{role:'user',content:user}],1500,'grade');
   const m=txt.match(/\{[\s\S]*\}/); return JSON.parse(m?m[0]:txt);
 }
 function examFlags(it){
