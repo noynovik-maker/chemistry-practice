@@ -1099,7 +1099,7 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
 <div id="app">
 <header>
   <h1>תירגולים בכימיה</h1>
-  <p>5 יח"ל – כיתות י-יב &nbsp;|&nbsp; מורה: נוי נוביק</p>
+  <p>5 יח"ל – כיתות י-יב &nbsp;|&nbsp; פיתוח: נוי נוביק</p>
 </header>
 
 <div id="hub-screen" class="active">
@@ -7529,9 +7529,14 @@ function aiErrMsg(d){const m=(d&&d.error&&d.error.message)||'';
   if(m==='NO_CLASS_CODE')return 'קוד הכיתה לא מוכר. בדוק אותו מול המורה.';
   if(m==='NO_STUDENT')return 'חסר כינוי תלמיד.';
   return m||'שגיאה בשרת.';}
-function aiCheckErr(d){const m=d&&d.error&&d.error.message;if(m==='NO_CLASS_CODE'||m==='NO_STUDENT'){try{localStorage.removeItem('chem_class_code');}catch(e){}}}
+function aiCheckErr(d){const m=d&&d.error&&d.error.message;
+  if(m==='NO_CLASS_CODE'||m==='NO_STUDENT'){
+    try{localStorage.removeItem(m==='NO_CLASS_CODE'?'chem_class_code':'chem_student');}catch(e){}
+    // פותחים מיד את חלון הכניסה, עם הסבר מה לא תקין
+    setTimeout(()=>ensureClassId(m==='NO_CLASS_CODE'?'הקוד שהוקלד לא מוכר. בדוק אותו מול המורה והקלד שוב.':'חסר כינוי.'),350);
+  }}
 // חלון קוד כיתה – פעם אחת במכשיר. כינוי בלבד, בלי שם מלא (פרטיות).
-function ensureClassId(){
+function ensureClassId(note){
   if(!AI_PROXY_URL)return Promise.resolve(true);
   const c=aiClass(); if(c.code&&c.student)return Promise.resolve(true);
   return new Promise(res=>{
@@ -7540,7 +7545,7 @@ function ensureClassId(){
     ov.style.cssText='position:fixed;inset:0;background:rgba(5,5,20,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
     ov.innerHTML=`<div style="background:var(--panel,#1a1a2e);border:1px solid var(--border,#333);border-radius:18px;padding:20px;max-width:360px;width:100%;color:var(--text,#fff)">
       <div style="font-size:1.15rem;font-weight:800;margin-bottom:6px">🔐 כניסה לעוזרי ה-AI</div>
-      <div style="font-size:.88rem;opacity:.8;margin-bottom:12px">את קוד הכיתה מקבלים מהמורה. בכינוי אל תכתוב שם מלא – מספיק שם פרטי או כינוי.</div>
+      ${note?`<div style="font-size:.88rem;color:#fca5a5;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:10px;padding:8px;margin-bottom:10px">⚠️ ${note}</div>`:''}<div style="font-size:.88rem;opacity:.8;margin-bottom:12px">את קוד הכיתה מקבלים מהמורה. בכינוי אל תכתוב שם מלא – מספיק שם פרטי או כינוי.</div>
       <input id="classIdCode" placeholder="קוד כיתה" value="${c.code}" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--border,#444);background:var(--bg,#0f0f1e);color:inherit;direction:ltr;text-transform:uppercase">
       <input id="classIdName" placeholder="כינוי" maxlength="20" value="${c.student}" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px;border-radius:10px;border:1px solid var(--border,#444);background:var(--bg,#0f0f1e);color:inherit">
       <div style="display:flex;gap:8px"><button id="classIdOk" class="tbtn tbtn-play" style="flex:1">כניסה</button><button id="classIdNo" class="tbtn" style="flex:1">לא עכשיו</button></div></div>`;
