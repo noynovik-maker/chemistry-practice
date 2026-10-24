@@ -199,6 +199,28 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
 .coval-game .score-pct .big{color:#6ee7b7;}
 
 /* ── Formative Assessment Panel ── */
+
+.conf-wrap{flex:1}.conf-q{font-size:12px;color:var(--muted,#94a3b8);text-align:center;margin-bottom:6px}
+.conf-btns{display:flex;gap:8px}.conf-btns .btn{flex:1;font-size:14px;padding:12px 8px}
+.btn.conf-guess{background:linear-gradient(135deg,#b45309,#f59e0b)}
+.fb-goal{font-size:13px;line-height:1.6;padding:8px 10px;border-radius:10px;background:rgba(99,102,241,.1);margin-bottom:10px}
+.fb-ai{margin-bottom:12px;padding:10px 12px;border-radius:12px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.3)}
+.fb-ai-h{font-weight:800;font-size:13px;margin-bottom:4px;color:#67e8f9}.fb-ai-t{font-size:13.5px;line-height:1.7;white-space:pre-wrap}
+.fb-loading{opacity:.55}.fb-loading::after{content:' …'}
+.fb-mini{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:9px;border:1px solid rgba(34,211,238,.5);background:transparent;color:#67e8f9;cursor:pointer;font-family:inherit}
+.fb-sec{margin:12px 0}.fb-h{font-weight:800;font-size:14px;margin-bottom:6px}
+.fb-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fb-cell{border-radius:11px;padding:8px;text-align:center;border:1px solid var(--border)}
+.fb-cell.g{background:rgba(74,222,128,.1)}.fb-cell.y{background:rgba(250,204,21,.1)}.fb-cell.r{background:rgba(248,113,113,.12)}.fb-cell.o{background:rgba(251,146,60,.1)}
+.fb-n{font-size:22px;font-weight:900}.fb-t{font-size:12.5px;font-weight:700}.fb-s{font-size:11px;opacity:.7}
+.fb-line{font-size:13px;line-height:1.6;margin:3px 0}
+.fb-trap{padding:8px 10px;border-radius:10px;background:rgba(251,191,36,.07);border:1px dashed rgba(251,191,36,.5);margin:6px 0}
+.fb-tt{font-weight:700;font-size:13px}.fb-cnt{font-weight:400;font-size:11.5px;opacity:.75}.fb-right{font-size:12.5px;line-height:1.55;margin-top:3px;color:#86efac}
+.fb-next{padding:10px;border-radius:12px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.35)}
+.fb-btn{display:block;width:100%;text-align:right;margin:8px 0 2px;padding:11px 12px;border-radius:11px;border:1px solid rgba(124,58,237,.5);background:rgba(124,58,237,.12);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.fb-btn.main{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;box-shadow:0 4px 14px rgba(124,58,237,.35)}
+.fb-why{font-size:12px;line-height:1.55;opacity:.8;margin:2px 4px 6px}
+.fb-share{margin-top:6px;width:100%;padding:10px;border-radius:11px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer}
 .formative-panel{margin-top:20px;border-radius:16px;border:1px solid var(--border);overflow:hidden;}
 .formative-header{background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(0,229,255,.1));padding:13px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
 .formative-header-icon{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;}
@@ -1310,7 +1332,10 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
       <div class="options" id="gqOptions"></div>
       <div class="feedback" id="gqFeedback"></div>
       <div class="actions">
-        <button class="btn btn-check" id="gqBtnCheck" onclick="gqCheck()" disabled>בדוק תשובה</button>
+        <button class="btn btn-check" id="gqBtnCheck" onclick="gqCheck()" disabled style="display:none">בדוק תשובה</button>
+        <div class="conf-wrap" id="gqConfRow"><div class="conf-q">כמה אתה בטוח בתשובה?</div><div class="conf-btns">
+          <button class="btn btn-check conf-sure" id="gqBtnSure" onclick="gqCheck('sure')" disabled>✓ בטוח – בדוק</button>
+          <button class="btn btn-check conf-guess" id="gqBtnGuess" onclick="gqCheck('guess')" disabled>🤔 מנחש – בדוק</button></div></div>
         <button class="btn btn-next" id="gqBtnNext" onclick="gqNext()" style="display:none">שאלה הבאה ←</button>
       </div>
     </div>
@@ -1331,7 +1356,7 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
       <div class="formative-panel" id="gq-formative" style="display:none;">
         <div class="formative-header">
           <span class="formative-header-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="12" width="4" height="10" rx="1.5" fill="#a78bfa"/><rect x="8" y="7" width="4" height="15" rx="1.5" fill="#06b6d4"/><rect x="14" y="3" width="4" height="19" rx="1.5" fill="#34d399"/><circle cx="20" cy="5" r="2.5" fill="#fbbf24"/></svg></span>
-          <div><div class="formative-header-title">הערכה מעצבת</div><div class="formative-header-sub">משוב אישי מד"ר אטום על הביצועים שלך</div></div>
+          <div><div class="formative-header-title">הערכה מעצבת</div><div class="formative-header-sub">איפה אתה עומד, מה מכשיל אותך, ומה הצעד הבא</div></div>
         </div>
         <div class="formative-body">
           <div class="formative-loading" id="gq-formative-loading"><div class="typing-dots"><span></span><span></span><span></span></div><span>מנתח את הביצועים שלך...</span></div>
@@ -3532,6 +3557,7 @@ async function sendAI(){
   const text=input.value.trim();if(!text)return;
   document.getElementById('quickBtns').style.display='none';
   addMsg(text,'user');
+  {const qz=document.getElementById('gq-quiz'); if(qz&&qz.classList.contains('active')) gqHelpN++;}
   aiHistory.push({role:'user',content:text});
   input.value='';input.style.height='auto';
   aiLoading=true;document.getElementById('aiSend').disabled=true;showTyping();
@@ -4647,22 +4673,24 @@ ${wrong.length>0 ? `\nשאלות שנענו שגוי:\n${wrongSummary}` : '\nה�
 כתוב בגוף שני (אתה/את), חם ומעודד, ללא כוכביות או formatים מורכבים. קצר וממוקד.`;
 
   try {
+    if(AI_PROXY_URL && !(aiClass().code&&aiClass().student)) throw {noCode:true};
     const res = await fetch(aiEndpoint(),{
       method:'POST', headers:aiHeaders(),
       body: JSON.stringify(aiBody({ max_tokens:400,
         system:'אתה מורה כימיה ישראלי חם ומעודד. כותב הערכות מעצבות קצרות בעברית לתלמידי כיתה י.',
         messages:[{role:'user',content:prompt}]
-      },'chat'))
+      },'feedback'))
     });
     const data = await res.json();
+    if(data.error) aiCheckErr(data);
     const reply = aiText(data);
     loading.style.display='none';
     content.style.display='block';
-    content.textContent = reply;
+    content.textContent = reply || `ענית נכון על ${correct} מתוך ${total} (${pct}%). קל ${byDiff.easy.c}/${byDiff.easy.t}, בינוני ${byDiff.medium.c}/${byDiff.medium.t}, קשה ${byDiff.hard.c}/${byDiff.hard.t}.\n${pct>=85?'הנושא יושב טוב – אפשר להתקדם לנושא הבא.':wrong.length?'הצעד הבא: לעבור שוב על השאלות שטעית בהן, ולשאול את ד"ר אטום על מה שלא ברור.':''}${data.error?'\n(למשוב אישי מד"ר אטום צריך קוד כיתה – אפשר להזין אותו במשאבים.)':''}`;
   } catch(e) {
     loading.style.display='none';
     content.style.display='block';
-    content.textContent = 'לא הצלחתי לייצר משוב כרגע. נסה שוב מאוחר יותר.';
+    content.textContent = `ענית נכון על ${correct} מתוך ${total} (${pct}%). קל ${byDiff.easy.c}/${byDiff.easy.t}, בינוני ${byDiff.medium.c}/${byDiff.medium.t}, קשה ${byDiff.hard.c}/${byDiff.hard.t}.\n${pct>=85?'הנושא יושב טוב – אפשר להתקדם לנושא הבא.':'הצעד הבא: לעבור שוב על השאלות שטעית בהן, ולשאול את ד"ר אטום על מה שלא ברור.'}`+(e&&e.noCode?'\n(למשוב אישי מד"ר אטום צריך קוד כיתה – מזינים אותו בפעם הראשונה שפונים לד"ר אטום.)':'');
   }
 }
 
@@ -5310,11 +5338,11 @@ renderHub();
 // GENERIC QUIZ ENGINE (gq) — one engine, many banks
 // ════════════════════════════════════════════════
 const GQ_BANKS = {};
-let gqBank=null, gqQs=[], gqCur=0, gqScoreVal=0, gqAnswers=[], gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
+let gqBankId='', gqBank=null, gqQs=[], gqCur=0, gqScoreVal=0, gqAnswers=[], gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 
 function gqOpen(bankId){
   const b = GQ_BANKS[bankId]; if(!b) return;
-  gqBank = b;
+  gqBank = b; gqBankId = bankId;
   const scr = document.getElementById('gq-screen');
   scr.style.setProperty('--gqc', b.color); scr.style.setProperty('--gqc2', b.color2||b.color);
   document.getElementById('gqNavTitle').textContent = b.title;
@@ -5356,7 +5384,7 @@ function gqStartQuiz(){
     const e = gqQs.filter(q=>q.difficulty==='easy').slice(0,3);
     gqQs = [...e, ...gqQs.filter(q=>!e.includes(q))];
   }
-  gqCur=0; gqScoreVal=0; gqAnswers=[]; gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
+  gqCur=0; gqScoreVal=0; gqAnswers=[]; gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}}; gqFocusLabel='';
   hide('gq-start'); show('gq-quiz'); gqRender();
 }
 function gqToggleLegend(){
@@ -5388,7 +5416,9 @@ function gqRender(){
   });
   document.getElementById('gqFeedback').className='feedback';
   document.getElementById('gqBtnCheck').disabled=true;
-  document.getElementById('gqBtnCheck').style.display='block';
+  document.getElementById('gqConfRow').style.display='block';
+  ['gqBtnSure','gqBtnGuess'].forEach(id=>document.getElementById(id).disabled=true);
+  gqQT0=Date.now(); gqHelpQ0=gqHelpN;
   document.getElementById('gqBtnNext').style.display='none';
   gqStats();
   const card=document.getElementById('gqQCard');card.style.animation='none';void card.offsetWidth;card.style.animation='slideUp .35s ease both';
@@ -5405,9 +5435,10 @@ function gqToggle(div,q){
   atomNoteSelect();
   if(!q.multi)document.querySelectorAll('#gqOptions .opt').forEach(o=>o.classList.remove('selected'));
   div.classList.toggle('selected');
-  document.getElementById('gqBtnCheck').disabled=![...document.querySelectorAll('#gqOptions .opt.selected')].length;
+  const none=![...document.querySelectorAll('#gqOptions .opt.selected')].length;
+  ['gqBtnCheck','gqBtnSure','gqBtnGuess'].forEach(id=>document.getElementById(id).disabled=none);
 }
-function gqCheck(){
+function gqCheck(conf){
   const q=gqQs[gqCur];
   const sel=[...document.querySelectorAll('#gqOptions .opt.selected')].map(o=>+o.dataset.idx);
   document.querySelectorAll('#gqOptions .opt').forEach(o=>{
@@ -5420,13 +5451,14 @@ function gqCheck(){
   const pts={easy:1,medium:2,hard:3}[q.difficulty];
   if(ok)gqScoreVal+=pts;
   gqDiff[q.difficulty].t++;if(ok)gqDiff[q.difficulty].c++;
-  gqAnswers.push({q,sel,ok});
+  gqAnswers.push({q,sel,ok,conf:conf||'sure',t:(Date.now()-gqQT0)/1000,help:gqHelpN-gqHelpQ0});
   atomNoteAnswer(ok,q,sel[0]);
   const fb=document.getElementById('gqFeedback');
   if(ok){fb.className='feedback correct show';fb.innerHTML=`<strong>✅ נכון! +${pts}</strong><br>${q.explain}`;spawnParticles(true);}
   else{fb.className='feedback wrong show';const tr=(q.traps&&sel.map(s=>q.traps[s]).filter(Boolean)[0])||'';fb.innerHTML=`<strong>❌ לא נכון</strong><br>${q.explain}`+(tr?`<div class="trap-box">🪤 <b>מלכודת נפוצה:</b> ${tr}</div>`:'');}
   gqStats();
   document.getElementById('gqBtnCheck').style.display='none';
+  document.getElementById('gqConfRow').style.display='none';
   document.getElementById('gqBtnNext').style.display='block';
 }
 function gqNext(){ gqCur++; if(gqCur>=gqQs.length)gqShowResult(); else gqRender(); }
@@ -5449,9 +5481,229 @@ function gqShowResult(){
   document.getElementById('gqBkE').textContent=de.t?de.c+'/'+de.t:'—';
   document.getElementById('gqBkM').textContent=dm.t?dm.c+'/'+dm.t:'—';
   document.getElementById('gqBkH').textContent=dh.t?dh.c+'/'+dh.t:'—';
-  generateFormative('gq', gqBank.title, gqAnswers.map(a=>({q:{text:a.q.text.replace(/<[^>]+>/g,''),difficulty:a.q.difficulty},ok:a.ok})));
+  fbRun();
 }
-function gqRestart(){ hide('gq-result'); document.getElementById('gq-formative').style.display='none'; show('gq-start'); }
+function gqRestart(){ hide('gq-result'); document.getElementById('gq-formative').style.display='none'; gqFocusLabel=''; show('gq-start'); }
+
+// ════════════════════════════════════════════════
+// הערכה מעצבת – לאן אני הולך / איפה אני עומד / מה הצעד הבא
+// האבחון מחושב בקוד (עקבי, חינמי, עובד גם בלי בינה). הבינה רק מנסחת פסקה אישית.
+// ════════════════════════════════════════════════
+const FB_EXPECT={easy:35,medium:60,hard:90};               // זמן צפוי לשאלה (שניות)
+let gqQT0=0, gqHelpN=0, gqHelpQ0=0, gqFocusLabel='', fbSteps=[], fbLast=null;
+
+function fbChapter(){ return CHAPTERS.find(c=>c.topics.some(t=>t.game===gqBankId))||null; }
+function fbGrade(){ const ch=fbChapter(); return ch&&['a','b','c'].includes(ch.id)?'י\'':'י"א–י"ב'; }
+function fbTrapTitle(s){ return String(s||'').split(':')[0].trim(); }
+function fbTrapInfo(title){
+  for(const b of [gqBank,...Object.values(GQ_BANKS)]){ const t=(b&&b.traps||[]).find(x=>x.title.trim()===title); if(t) return t; }
+  return null;
+}
+function fbTagged(title){ return gqBank.questions.filter(q=>Object.values(q.traps||{}).some(v=>fbTrapTitle(v)===title)); }
+function fbStrip(h){ return String(h||'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim(); }
+function fbHistKey(){ return 'fb_'+gqBankId; }
+function fbHistLoad(){ try{ return JSON.parse(localStorage.getItem(fbHistKey())||'[]'); }catch(e){ return []; } }
+function fbHistSave(h){ try{ localStorage.setItem(fbHistKey(), JSON.stringify(h.slice(0,6))); }catch(e){} }
+
+function fbAnalyze(){
+  const A=gqAnswers, n=A.length, c=A.filter(a=>a.ok).length, pct=n?Math.round(c/n*100):0;
+  const conf={cs:0,cg:0,ws:0,wg:0};
+  A.forEach(a=>{ conf[(a.ok?'c':'w')+(a.conf==='guess'?'g':'s')]++; });
+  const traps={};
+  A.forEach(a=>{
+    if(a.ok||!a.q.traps) return;
+    const raw=a.sel.map(s=>a.q.traps[s]).filter(Boolean)[0]; if(!raw) return;
+    const title=fbTrapTitle(raw); const r=traps[title]=traps[title]||{title,n:0,sure:0};
+    r.n++; if(a.conf!=='guess') r.sure++;
+  });
+  const trapList=Object.values(traps).sort((x,y)=>(y.n*2+y.sure)-(x.n*2+x.sure));
+  const exp=a=>FB_EXPECT[a.q.difficulty]||60;
+  const hasty=A.filter(a=>!a.ok && a.t < Math.max(6, exp(a)*0.2)).length;
+  const slow=A.filter(a=>a.t > exp(a)*2).length;
+  const help=A.reduce((s,a)=>s+(a.help||0),0);
+  const sureN=conf.cs+conf.ws;
+  const diff={}; ['easy','medium','hard'].forEach(d=>{ const x=A.filter(a=>a.q.difficulty===d); diff[d]={t:x.length,c:x.filter(a=>a.ok).length}; });
+  const hist=fbHistLoad();
+  return {n,c,pct,conf,trapList,hasty,slow,help,calib:sureN?Math.round(conf.cs/sureN*100):null,diff,prev:hist[0]||null,wrong:A.filter(a=>!a.ok).map(a=>a.q)};
+}
+
+function fbNextTopic(){
+  const ch=fbChapter(); if(!ch) return null;
+  const i=ch.topics.findIndex(t=>t.game===gqBankId);
+  return ch.topics.slice(i+1).find(t=>GQ_BANKS[t.game]||['radio','mol','radius','ion','coval','polar'].includes(t.game))||null;
+}
+
+function fbPlan(r){
+  const S=[]; const top=r.trapList[0]; const tagged=top?fbTagged(top.title):[];
+  const ch=fbChapter(); const diagHas=t=>ch&&DIAG[ch.id]&&DIAG[ch.id].items.some(it=>it.trap===t);
+  if(top && (top.n>=2||top.sure>=1) && tagged.length>=2){
+    S.push({kind:'trap',title:top.title,label:`🎯 תרגול ממוקד: "${top.title}"`,
+      why:`נפלת במלכודת הזו ${top.n===1?'פעם אחת':top.n+' פעמים'}${top.sure?(top.sure===top.n?', ובכל הפעמים סימנת שאתה בטוח':', ובחלק מהפעמים סימנת שאתה בטוח'):''}. זו תפיסה שגויה, לא רק חוסר ידע – כדאי לפרק אותה ב־${Math.min(tagged.length,6)} שאלות שבנויות סביבה.`});
+  }
+  if(r.hasty>=3){
+    S.push({kind:'wrong',label:'🐢 לחזור לשאלות שטעית בהן – לאט',
+      why:`${r.hasty} תשובות שגויות ניתנו תוך שניות. לפני שבוחרים: לקרוא את כל האפשרויות, ולפסול כל אחת בנימוק.`});
+  }
+  if(r.conf.wg>=3 && r.conf.wg>=r.conf.ws && gqBank.dav){
+    S.push({kind:'dav',label:'📖 לחזור למצגת של הנושא',
+      why:`ב־${r.conf.wg} שאלות ניחשת וטעית – זה פער בידע, לא מלכודת. עבור על המצגת, ואז חזור לשאלות שטעית בהן.`});
+  }
+  if(r.c<r.n && !S.some(s=>s.kind==='wrong') && (r.n-r.c)>=2){
+    S.push({kind:'wrong',label:`🔁 לפתור שוב את ${r.n-r.c} השאלות שטעית בהן`,why:'חזרה על אותן שאלות אחרי ההסבר מבססת את מה שלמדת עכשיו.'});
+  }
+  if(r.conf.cg>=4){
+    S.push({kind:'retry',label:'💪 סבב נוסף לביסוס',why:`ב־${r.conf.cg} שאלות צדקת אבל לא היית בטוח. ידע לא יציב נשכח מהר – סבב נוסף יקבע אותו.`});
+  }
+  if(r.pct>=85 && r.hasty<3){
+    const nt=fbNextTopic();
+    if(nt) S.push({kind:'next',game:nt.game,label:`➡️ לנושא הבא: ${nt.title}`,why:'הנושא הזה יושב טוב. אפשר להתקדם.'});
+    else S.push({kind:'exam',label:'📝 בגרות בהרכבה – מצב פרק',why:'סיימת את נושאי הפרק ברמה טובה. הצעד הבא: שאלות בגרות על זמן.'});
+  }
+  if(top && diagHas(top.title)) S.push({kind:'diag',label:'🩺 לבדוק את עצמך במבחן הדיאגנוסטי של הפרק',why:'יש בו פריט שבודק בדיוק את המלכודת הזו – גם את התשובה וגם את הנימוק.'});
+  if(top){ const info=fbTrapInfo(top.title);
+    S.push({kind:'ask',label:'💬 לשאול את ד"ר אטום על המלכודת',msg:`נפלתי במלכודת "${top.title}"${info?` (חשבתי ש${fbStrip(info.wrong).replace(/^"|"$/g,'')})`:''}. תעזור לי להבין איפה הטעות בחשיבה, ותן לי שאלה קצרה לבדוק את עצמי.`,why:''}); }
+  if(!S.length) S.push({kind:'retry',label:'🔁 סבב נוסף',why:'סבב נוסף עם שאלות אחרות מהמאגר.'});
+  return S.slice(0,3);
+}
+
+function fbProgressHTML(r){
+  const p=r.prev; if(!p) return '';
+  const d=new Date(p.date); const ds=d.toLocaleDateString('he-IL',{day:'numeric',month:'numeric'});
+  const same=!p.focus&&!gqFocusLabel;   // משווים ציון רק בין שני סבבים מלאים
+  let h=`<div class="fb-sec"><div class="fb-h">📈 מאז הפעם הקודמת (${ds})</div>`+(same?`<div class="fb-line">ציון: ${p.pct}% ← עכשיו ${r.pct}% ${r.pct>p.pct?'⬆️':r.pct<p.pct?'⬇️':'➖'}</div>`:'');
+  if(p.rec){
+    h+=`<div class="fb-line">ההמלצה הקודמת: ${p.rec.label.replace(/^\S+\s/,'')} – ${p.done?'<b style="color:#4ade80">בוצעה ✓</b>':'<span style="color:#fbbf24">לא בוצעה</span>'}</div>`;
+    if(p.rec.kind==='trap'){ const now=(r.trapList.find(t=>t.title===p.rec.title)||{n:0}).n; const was=(p.traps||{})[p.rec.title]||0;
+      h+=`<div class="fb-line">המלכודת "${p.rec.title}": ${was} ← ${now} ${now<was?'– התקדמות 👏':now>was?'– עדיין חוזרת':''}</div>`; }
+  }
+  return h+'</div>';
+}
+
+function fbRender(r){
+  const panel=document.getElementById('gq-formative'), loading=document.getElementById('gq-formative-loading'), content=document.getElementById('gq-formative-content');
+  panel.style.display='block'; loading.style.display='none'; content.style.display='block'; content.style.whiteSpace='normal';
+  const cf=r.conf;
+  const cell=(n,ico,t,s,cls)=>`<div class="fb-cell ${cls}"><div class="fb-n">${n}</div><div class="fb-t">${ico} ${t}</div><div class="fb-s">${s}</div></div>`;
+  const traps=r.trapList.slice(0,3).map(t=>{ const i=fbTrapInfo(t.title);
+    return `<div class="fb-trap"><div class="fb-tt">🪤 ${t.title} <span class="fb-cnt">×${t.n}${t.sure?' · בטוח '+t.sure:''}</span></div>${i?`<div class="fb-right">✓ ${i.right}</div>`:''}</div>`; }).join('');
+  const strengths=[]; const D={easy:'קלות',medium:'בינוניות',hard:'קשות'};
+  ['hard','medium','easy'].forEach(d=>{ const x=r.diff[d]; if(x.t>=2 && x.c/x.t>=0.75) strengths.push(`${x.c}/${x.t} בשאלות ה${D[d]}`); });
+  const proc=[];
+  if(r.hasty) proc.push(`⚡ ${r.hasty} תשובות שגויות מהר מדי (פחות מכמה שניות)`);
+  if(r.slow) proc.push(`⏳ ${r.slow} שאלות שנמשכו יותר מפי 2 מהזמן הצפוי`);
+  if(r.help) proc.push(`💬 פנית לד"ר אטום ${r.help} פעמים`);
+  if(r.calib!==null) proc.push(`🎯 כשסימנת "בטוח" – צדקת ב־${r.calib}% מהמקרים${r.calib>=85?' (כיול טוב)':r.calib<65?' (כדאי לבדוק את עצמך יותר)':''}`);
+  content.innerHTML=`
+   <div class="fb-goal">🧭 <b>המטרה:</b> לענות נכון, ובביטחון, על שאלות בגרות בנושא ${gqBank.title}${gqFocusLabel?` <span class="fb-cnt">(${gqFocusLabel})</span>`:''}.</div>
+   <div class="fb-ai" id="fbAI"></div>
+   <div class="fb-sec fb-next"><div class="fb-h">👣 הצעד הבא שלך</div>
+    ${fbSteps.map((s,i)=>`<button class="fb-btn${i===0?' main':''}" onclick="fbDo(${i})">${s.label}</button>${s.why?`<div class="fb-why">${s.why}</div>`:''}`).join('')}
+   </div>
+   <div class="fb-sec"><div class="fb-h">📍 איפה אתה עומד</div>
+    <div class="fb-grid">
+     ${cell(cf.cs,'✅','יודע','נכון ובטוח','g')}
+     ${cell(cf.cg,'🤔','ידע לא יציב','נכון אבל ניחשת','y')}
+     ${cell(cf.ws,'🪤','תפיסה שגויה','שגוי ובטוח','r')}
+     ${cell(cf.wg,'❓','פער בידע','שגוי וניחשת','o')}
+    </div>
+    ${strengths.length?`<div class="fb-line">💪 חוזקות: ${strengths.join(' · ')}</div>`:''}
+   </div>
+   ${traps?`<div class="fb-sec"><div class="fb-h">🔍 מה מכשיל אותך</div>${traps}</div>`:''}
+   ${proc.length?`<div class="fb-sec"><div class="fb-h">🛠️ איך עבדת</div>${proc.map(p=>`<div class="fb-line">${p}</div>`).join('')}</div>`:''}
+   ${fbProgressHTML(r)}
+   <button class="fb-share" id="fbShareBtn" onclick="fbShare()">📤 שלח סיכום למורה</button>`;
+}
+
+function fbDeterministicText(r){
+  const top=r.trapList[0]; const parts=[];
+  if(r.pct>=85) parts.push(`ענית נכון על ${r.c} מתוך ${r.n} שאלות – שליטה טובה בנושא.`);
+  else if(r.pct>=60) parts.push(`ענית נכון על ${r.c} מתוך ${r.n} שאלות. הבסיס קיים, ויש נקודה אחת או שתיים שכדאי לחזק.`);
+  else parts.push(`ענית נכון על ${r.c} מתוך ${r.n} שאלות. הנושא עוד לא יושב – וזה בדיוק מה שתרגול נועד לגלות.`);
+  if(top) parts.push(`הטעות שחזרה הכי הרבה היא "${top.title}".`);
+  if(fbSteps[0]) parts.push('הצעד הבא מחכה לך למטה.');
+  return parts.join(' ');
+}
+
+async function fbAI(r){
+  const box=document.getElementById('fbAI'); if(!box) return;
+  const canAI = AI_PROXY_URL ? !!(aiClass().code&&aiClass().student) : !!(window.CHEM_API_KEY||localStorage.getItem('chem_api_key'));
+  box.innerHTML=`<div class="fb-ai-h">🧪 ד"ר אטום</div><div class="fb-ai-t">${fbDeterministicText(r)}</div>`;
+  if(!canAI){ if(AI_PROXY_URL) box.insertAdjacentHTML('beforeend','<button class="fb-mini" onclick="fbAskAI()">לקבל משוב אישי מד"ר אטום (דורש קוד כיתה)</button>'); return; }
+  const t=box.querySelector('.fb-ai-t'); t.classList.add('fb-loading');
+  const info=r.trapList.slice(0,3).map(x=>{const i=fbTrapInfo(x.title);return `"${x.title}" ×${x.n} (בטוח ${x.sure})${i?' – הנכון: '+fbStrip(i.right):''}`;}).join('; ');
+  const user=`נושא: ${gqBank.title} (כיתה ${fbGrade()}).${gqFocusLabel?' סוג סבב: '+gqFocusLabel+'.':''}
+ציון: ${r.c}/${r.n}. קל ${r.diff.easy.c}/${r.diff.easy.t}, בינוני ${r.diff.medium.c}/${r.diff.medium.t}, קשה ${r.diff.hard.c}/${r.diff.hard.t}.
+ביטחון: נכון+בטוח ${r.conf.cs}, נכון+ניחוש ${r.conf.cg}, שגוי+בטוח ${r.conf.ws}, שגוי+ניחוש ${r.conf.wg}.
+מלכודות שנפל בהן: ${info||'אין'}.
+תהליך: חפוזות ${r.hasty}, איטיות ${r.slow}, פניות לעזרה ${r.help}.
+${r.prev?`בפעם הקודמת: ${r.prev.pct}%${r.prev.rec?', ההמלצה הייתה "'+r.prev.rec.label.replace(/^\S+\s/,'')+'" ו'+(r.prev.done?'בוצעה':'לא בוצעה'):''}.`:''}
+הצעד הבא שנבחר: ${fbSteps[0]?fbSteps[0].label.replace(/^\S+\s/,'')+' – '+fbSteps[0].why:'אין'}.`;
+  const sys=`אתה ד"ר אטום, מורה לכימיה 5 יח"ל. כתוב לתלמיד הערכה מעצבת קצרה: 3–4 משפטים בעברית, בגוף שני, טקסט רציף בלי רשימות, בלי כוכביות ובלי כותרות.
+משפט 1: מה עבד – התייחס למשימה ולאסטרטגיה, לא לכישרון ("עבדת בשיטתיות", לא "אתה מוכשר").
+משפט 2: מה מכשיל ולמה – אם יש מלכודת, הסבר במשפט אחד את הטעות בחשיבה, לפי הנכון שסופק. אם היה "שגוי ובטוח" – אמור שזו תפיסה שגויה שכדאי לפרק; אם "שגוי וניחוש" – פער בידע.
+משפט 3: למה הצעד הבא שנבחר הוא הנכון עכשיו. אל תמציא צעד אחר.
+אם יש פעם קודמת – התייחס להתקדמות במילים ספורות. אל תמציא נתונים ואל תוסיף תוכן כימי שלא סופק. טון חם וענייני, בלי מחמאות ריקות.`;
+  try{
+    const res=await fetch(aiEndpoint(),{method:'POST',headers:aiHeaders(),body:JSON.stringify(aiBody({max_tokens:350,system:sys,messages:[{role:'user',content:user}]},'feedback'))});
+    const data=await res.json(); if(data.error){ aiCheckErr(data); throw 0; }
+    const txt=aiText(data); if(txt){ t.textContent=txt.replace(/\*\*/g,''); }
+  }catch(e){} finally{ t.classList.remove('fb-loading'); }
+}
+async function fbAskAI(){ if(await ensureClassId()){ const b=document.querySelector('#fbAI .fb-mini'); if(b) b.remove(); fbAI(fbLast); } }
+
+function fbRecord(r){
+  const h=fbHistLoad();
+  const traps={}; r.trapList.forEach(t=>traps[t.title]=t.n);
+  h.unshift({date:Date.now(),pct:r.pct,n:r.n,traps,conf:r.conf,hasty:r.hasty,focus:gqFocusLabel||'',rec:fbSteps[0]?{kind:fbSteps[0].kind,label:fbSteps[0].label,title:fbSteps[0].title||''}:null,done:false});
+  fbHistSave(h);
+}
+
+function fbDo(i){
+  const s=fbSteps[i]; if(!s) return;
+  if(i===0){ const h=fbHistLoad(); if(h[0]){ h[0].done=true; fbHistSave(h); } }
+  if(s.kind==='trap'){ gqStartWith(shuffle(fbTagged(s.title)).slice(0,6),'תרגול ממוקד – '+s.title); }
+  else if(s.kind==='wrong'){ gqStartWith(shuffle([...fbLast.wrong]),'חזרה על שאלות שטעית בהן'); }
+  else if(s.kind==='retry'){ document.getElementById('gq-formative').style.display='none'; hide('gq-result'); gqStartQuiz(); }
+  else if(s.kind==='dav'){ window.open(DAV_BASE+gqBank.dav,'_blank','noopener'); }
+  else if(s.kind==='diag'){ const ch=fbChapter(); if(ch){ hide('gq-screen'); document.getElementById('gqNav').classList.remove('show'); openDiag(ch.id); } }
+  else if(s.kind==='next'){ hide('gq-screen'); document.getElementById('gqNav').classList.remove('show'); enterGame(s.game); }
+  else if(s.kind==='exam'){ openExam(); }
+  else if(s.kind==='ask'){
+    if(!aiOpen){ aiOpen=true; document.getElementById('ai-panel').classList.add('open'); const fb=document.getElementById('fabBadge'); if(fb) fb.style.display='none'; }
+    document.getElementById('aiInput').value=s.msg; sendAI();
+  }
+}
+
+function gqStartWith(qs,label){
+  if(!qs||!qs.length) return;
+  atomResetTrack();
+  gqQs=qs; gqFocusLabel=label||'';
+  gqCur=0; gqScoreVal=0; gqAnswers=[]; gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
+  document.getElementById('gq-formative').style.display='none';
+  hide('gq-result'); hide('gq-start'); show('gq-quiz'); gqRender();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function fbShare(){
+  const r=fbLast; if(!r) return;
+  const L=[`הערכה מעצבת – ${gqBank.title}${gqFocusLabel?' ('+gqFocusLabel+')':''}`,
+    `ציון: ${r.c}/${r.n} (${r.pct}%)`,
+    `יודע ${r.conf.cs} · ידע לא יציב ${r.conf.cg} · תפיסה שגויה ${r.conf.ws} · פער בידע ${r.conf.wg}`];
+  if(r.trapList.length) L.push('מלכודות: '+r.trapList.map(t=>`${t.title} ×${t.n}`).join(', '));
+  if(r.hasty) L.push(`תשובות חפוזות: ${r.hasty}`);
+  if(r.prev) L.push(`בפעם הקודמת: ${r.prev.pct}%`);
+  if(fbSteps[0]) L.push('הצעד הבא: '+fbSteps[0].label.replace(/^\S+\s/,''));
+  const txt=L.join('\n'); const btn=document.getElementById('fbShareBtn');
+  if(navigator.share){ navigator.share({title:'הערכה מעצבת',text:txt}).catch(()=>{}); return; }
+  const done=()=>{ if(btn){ btn.textContent='✓ הסיכום הועתק – הדבק בוואטסאפ למורה'; } };
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done,done); else done();
+}
+
+function fbRun(){
+  const r=fbAnalyze(); fbLast=r; fbSteps=fbPlan(r);
+  fbRender(r); fbRecord(r); fbAI(r);
+}
+
 
 // ════ QUESTION BANKS ════
 // ───────── BANK: קבוצות פונקציונליות ואיזומרים ─────────

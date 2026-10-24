@@ -48,7 +48,8 @@ export default {
     if (env.LIMITS) {
       const day = new Date().toISOString().slice(0, 10);
       if (!await bump(env, `c:${code}:${day}`, DAILY_PER_CLASS)) return err('הכיתה הגיעה למכסה היומית של שאלות ל-AI. נסו שוב מחר.', 429, origin);
-      if (!await bump(env, `s:${code}:${student}:${day}`, DAILY_PER_STUDENT)) return err(`הגעת למכסה היומית (${DAILY_PER_STUDENT} שאלות). נסה שוב מחר.`, 429, origin);
+      // הערכה מעצבת בסוף תרגול לא נספרת במכסה של התלמיד – רק במכסה של הכיתה
+      if (body.purpose !== 'feedback' && !await bump(env, `s:${code}:${student}:${day}`, DAILY_PER_STUDENT)) return err(`הגעת למכסה היומית (${DAILY_PER_STUDENT} שאלות). נסה שוב מחר.`, 429, origin);
     }
 
     let messages = Array.isArray(body.messages) ? body.messages.slice(-16) : [];
