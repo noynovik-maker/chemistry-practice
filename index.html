@@ -3548,7 +3548,7 @@ async function sendAI(){
       body:JSON.stringify(aiBody({max_tokens:800,system:systemPrompt,messages:aiHistory},'chat'))
     });
     const data=await res.json(); aiCheckErr(data);
-    const reply=data.error?('⚠️ '+aiErrMsg(data)):data.content?.[0]?.text||'מצטער, לא הצלחתי לקבל תשובה. נסה שוב.';
+    const reply=data.error?('⚠️ '+aiErrMsg(data)):(aiText(data)||('מצטער, לא הצלחתי לקבל תשובה. נסה שוב. ['+aiDiag(data)+']'));
     removeTyping();addMsg(reply,'bot');aiHistory.push({role:'assistant',content:reply});
   }catch(e){removeTyping();addMsg('שגיאת תקשורת. בדוק חיבור לאינטרנט ונסה שוב.','bot');}
   aiLoading=false;document.getElementById('aiSend').disabled=false;input.focus();
@@ -4655,7 +4655,7 @@ ${wrong.length>0 ? `\nשאלות שנענו שגוי:\n${wrongSummary}` : '\nה�
       },'chat'))
     });
     const data = await res.json();
-    const reply = data.content?.[0]?.text || '';
+    const reply = aiText(data);
     loading.style.display='none';
     content.style.display='block';
     content.textContent = reply;
@@ -4844,7 +4844,7 @@ async function galiCallAI(){
     const data=await res.json();
     galiRemoveTyping();
     if(data.error){aiCheckErr(data);galiAddMsg('⚠️ '+aiErrMsg(data),'bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
-    const reply=data.content?.[0]?.text||'';
+    const reply=aiText(data);
     if(!reply){galiAddMsg('לא קיבלתי תשובה — נסה שוב.','bot');galiLoading=false;if(sendBtn)sendBtn.disabled=false;return;}
     galiHistory.push({role:'assistant',content:reply});
     if(reply.includes('APPROVED:')){
@@ -7522,6 +7522,9 @@ function aiBody(o,purpose){
   if(AI_PROXY_URL){const c=aiClass();return {...o,purpose,classCode:c.code,student:c.student};}
   return {...o,model:purpose==='grade'?AI_MODEL_GRADE:AI_MODEL_CHAT};
 }
+// התשובה יכולה להכיל כמה בלוקים (למשל בלוק חשיבה לפני הטקסט) – מאחדים את כל בלוקי הטקסט
+function aiText(d){return Array.isArray(d&&d.content)?d.content.filter(b=>b&&b.type==='text'&&b.text).map(b=>b.text).join('\n').trim():'';}
+function aiDiag(d){try{return [d&&d.stop_reason,d&&d.model,Array.isArray(d&&d.content)?d.content.map(b=>b.type).join('+'):Object.keys(d||{}).join(',')].filter(Boolean).join(' | ');}catch(e){return '?';}}
 function aiErrMsg(d){const m=(d&&d.error&&d.error.message)||'';
   if(m==='NO_CLASS_CODE')return 'קוד הכיתה לא מוכר. בדוק אותו מול המורה.';
   if(m==='NO_STUDENT')return 'חסר כינוי תלמיד.';
@@ -7557,7 +7560,7 @@ async function callClaude(system,messages,max_tokens,purpose){
   if(!(await ensureClassId())) throw new Error('נדרש קוד כיתה');
   const res=await fetch(aiEndpoint(),{method:'POST',headers:aiHeaders(),body:JSON.stringify(aiBody({max_tokens:max_tokens||1200,system,messages},purpose||'chat'))});
   const data=await res.json(); if(data.error){aiCheckErr(data);throw new Error(aiErrMsg(data));}
-  return data.content?.[0]?.text||'';
+  return aiText(data);
 }
 
 // ════ CHEM KEYBOARD ════
