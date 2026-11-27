@@ -829,6 +829,7 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
 .gq-fig svg{max-width:100%;height:auto;}
 .gq-fig .cf{font-family:'Space Mono',monospace;font-size:clamp(15px,4vw,20px);color:#111;letter-spacing:.5px;line-height:1.7;}
 .gq-fig .cf sub{font-size:.7em;}
+.opt .ovr{top:-.25em;}
 .ovr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 6px;position:relative;top:-.35em;}
 .ovr small{font-size:.62em;line-height:1.1;min-height:1.1em;}
 .ovr-a{display:block;transform:scaleX(1.9);line-height:.8;}
@@ -3008,6 +3009,27 @@ function goHub(){
 // SHARED UTILS
 // ════════════════════════════════════════════════
 function shuffle(a){return [...a].sort(()=>Math.random()-.5);}
+// ── ערבוב סדר התשובות בשאלה, כולל עדכון הפניות לאותיות (א–ה) בהסבר ובמלכודות ──
+// מחזיר עותק של השאלה; השאלה המקורית אינה משתנה. noShuffle:true בשאלה מבטל ערבוב.
+const Q_LET=/(^|[^֐-׿'"׳״])((?:[ולבמשכה]-)?)([אבגדה])(['׳]?)(?![֐-׿\-'"׳״])/g;
+const Q_NOLET=/(?:סעיף|סעיפים|שאלה|שאלון|חלק|מועד|קבוצה|ויטמין|כיתה|שלב|פרק|טור|שורה|נספח|מס['׳]?)\s*$/;
+function qHasLetterRef(t){Q_LET.lastIndex=0;return Q_LET.test(String(t||'').replace(/<[^>]+>/g,' '));}
+function qShuffle(q){
+  if(!q||q.noShuffle||q.svgOptions||!Array.isArray(q.options)||q.options.length<3) return q;
+  // השאלה או התשובות עצמן מפנות לאותיות ("איזו מן השורות א–ד") – משאירים את הסדר
+  if(qHasLetterRef(q.text)||q.options.some(qHasLetterRef)) return q;
+  // תשובות שהן רצף ממוספר ("דיאגרמה I", "ניסוח (2)", "איור 3") – משאירים לפי הסדר
+  if(q.options.every(o=>/^\S+\s+\(?(?:\d+|[IVX]+|[a-dA-D])\)?$/.test(String(o).trim()))) return q;
+  const n=q.options.length, L='אבגדה';
+  const perm=shuffle(q.options.map((_,i)=>i)); const inv=[]; perm.forEach((o,p)=>inv[o]=p);
+  const fix=t=>typeof t!=='string'?t:t.replace(Q_LET,(m,b,pre,l,suf,off,str)=>{
+    const k=L.indexOf(l); if(k<0||k>=n||Q_NOLET.test(str.slice(0,off+b.length))) return m;
+    return b+pre+L[inv[k]]+suf;});
+  const remap=o=>{if(!o) return o; const r={}; Object.entries(o).forEach(([k,v])=>{r[inv[k]]=fix(v);}); return r;};
+  const c=q.correct;
+  return {...q, options:perm.map(i=>q.options[i]), correct:Array.isArray(c)?c.map(i=>inv[i]):inv[c],
+          explain:fix(q.explain), traps:remap(q.traps), _src:q._src||q};
+}
 function spawnParticles(ok){
   const cols=ok?['#00e5ff','#22c55e','#a78bfa','#fbbf24']:['#ef4444','#f59e0b'];
   for(let i=0;i<10;i++){
@@ -3058,7 +3080,7 @@ const RQUESTIONS=[
 let rMode='all',rQs=[],rCur=0,rScoreVal=0,rAnswers=[],rDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 function rSelectMode(el,m){rMode=m;document.querySelectorAll('#radio-start .mode-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');}
 function rStartQuiz(){
-  rQs=shuffle(rMode==='all'?RQUESTIONS:RQUESTIONS.filter(q=>q.difficulty===rMode));
+  rQs=shuffle(rMode==='all'?RQUESTIONS:RQUESTIONS.filter(q=>q.difficulty===rMode)).map(qShuffle);
   rCur=0;rScoreVal=0;rAnswers=[];rDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   hide('radio-start');show('radio-quiz');
   rRender();
@@ -3772,7 +3794,7 @@ let radQs=[],radCur=0,radScoreVal=0,radRightV=0,radWrongV=0,radStreakV=0,radAnsw
 let radDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 
 function radStartQuiz(){
-  radQs=shuffle(RADIUS_QUESTIONS);
+  radQs=shuffle(RADIUS_QUESTIONS).map(qShuffle);
   radCur=0;radScoreVal=0;radRightV=0;radWrongV=0;radStreakV=0;radAnswers=[];
   radDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   hide('rad-start');show('rad-quiz');
@@ -3912,7 +3934,7 @@ let ionQs=[],ionCur=0,ionScoreVal=0,ionAnswers=[];
 let ionDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 
 function ionStartQuiz(){
-  ionQs=shuffle(ION_QUESTIONS);
+  ionQs=shuffle(ION_QUESTIONS).map(qShuffle);
   ionCur=0;ionScoreVal=0;ionAnswers=[];
   ionDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   hide('ion-start');show('ion-quiz');
@@ -4361,7 +4383,7 @@ let covalQs=[],covalCur=0,covalScoreVal=0,covalAnswers=[];
 let covalDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 
 function covalStartQuiz(){
-  covalQs=shuffle(COVAL_QUESTIONS);
+  covalQs=shuffle(COVAL_QUESTIONS).map(qShuffle);
   covalCur=0;covalScoreVal=0;covalAnswers=[];
   covalDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   hide('coval-start');show('coval-quiz');covalRender();
@@ -4525,7 +4547,7 @@ let polarQs=[],polarCur=0,polarScoreVal=0,polarAnswers=[];
 let polarDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
 
 function polarStartQuiz(){
-  polarQs=shuffle(POLAR_QUESTIONS);
+  polarQs=shuffle(POLAR_QUESTIONS).map(qShuffle);
   polarCur=0;polarScoreVal=0;polarAnswers=[];
   polarDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   hide('polar-start');show('polar-quiz');polarRender();
@@ -5387,22 +5409,13 @@ function gqStartQuiz(){
     const e = gqQs.filter(q=>q.difficulty==='easy').slice(0,3);
     gqQs = [...e, ...gqQs.filter(q=>!e.includes(q))];
   }
+  gqQs=gqQs.map(qShuffle);
   gqCur=0; gqScoreVal=0; gqAnswers=[]; gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}}; gqFocusLabel='';
   hide('gq-start'); show('gq-quiz'); gqRender();
 }
 function gqToggleLegend(){
   document.getElementById('gqLegendToggle').classList.toggle('open');
   document.getElementById('gqLegendCollapse').classList.toggle('open');
-}
-// סדר הצגת התשובות: מעורבב, אלא אם ההסבר/המלכודות/התשובות מפנים לאות של תשובה (א–ד) או ל"כל התשובות"
-function gqOptOrder(q){
-  const ident=q.options.map((_,i)=>i);
-  if(q.noShuffle||q.options.length<3) return ident;
-  const LET=/(^|[\s(,;:'"])(?:[ולבמהשכ]-?)?[אבגדה]['׳]?(?=$|[\s,;:.)–\-])/;
-  const WORDS=/התשובות|תשובה [אבגדה]|היגדים|ההיגד|אפשרות [אבגדה]|סעיף/;
-  const txt=[q.explain||'',...Object.values(q.traps||{}),...q.options].join(' \n ').replace(/<[^>]+>/g,' ');
-  if(LET.test(txt)||WORDS.test(txt)) return ident;
-  return shuffle(ident);
 }
 function gqRender(){
   const q=gqQs[gqCur], total=gqQs.length;
@@ -5422,10 +5435,9 @@ function gqRender(){
   document.getElementById('gqMultiHint').style.display=q.multi?'flex':'none';
   const c=document.getElementById('gqOptions');c.innerHTML='';
   const L=['א','ב','ג','ד','ה'];
-  gqOptOrder(q).forEach((i,n)=>{
-    const o=q.options[i];
+  q.options.forEach((o,i)=>{
     const d=document.createElement('div');d.className='opt';d.dataset.idx=i;
-    d.innerHTML=`<span class="opt-letter">${L[n]}</span><span>${o}</span>`;
+    d.innerHTML=`<span class="opt-letter">${L[i]}</span><span>${o}</span>`;
     d.onclick=()=>gqToggle(d,q);c.appendChild(d);
   });
   document.getElementById('gqFeedback').className='feedback';
@@ -5691,7 +5703,7 @@ function fbDo(i){
 function gqStartWith(qs,label){
   if(!qs||!qs.length) return;
   atomResetTrack();
-  gqQs=qs; gqFocusLabel=label||'';
+  gqQs=qs.map(q=>qShuffle(q._src||q)); gqFocusLabel=label||'';
   gqCur=0; gqScoreVal=0; gqAnswers=[]; gqDiff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0}};
   document.getElementById('gq-formative').style.display='none';
   hide('gq-result'); hide('gq-start'); show('gq-quiz'); gqRender();
@@ -5913,7 +5925,7 @@ function openDiag(chId){
 function diagExit(){ hide('diag-screen'); if(diagCh) openChapter(diagCh); else goHubRoot(); }
 function diagShuffleItem(it){
   // shuffle answer order unless the explanation refers to option letters
-  if(/(אפשרות|תשובה|היגד)\s*[אבגד]['׳]?(?![\u0590-\u05FF])|\([אבגד]\)/.test(it.explain||'')) return it;
+  if(/(אפשרות|תשובה|היגד)\s*[אבגד]['׳]?(?![\u0590-\u05FF])|\([אבגד]\)/.test(it.explain||'')||[it.explain,it.text,...(it.options||[]),...(it.why||[])].some(qHasLetterRef)) return it;
   const perm=shuffle(it.options.map((_,i)=>i)); const inv={}; perm.forEach((o,n)=>inv[o]=n);
   const remap=t=>{if(!t) return t; const r={}; Object.entries(t).forEach(([k,v])=>r[inv[k]]=v); return r;};
   const wp=shuffle(it.why.map((_,i)=>i)); const winv={}; wp.forEach((o,n)=>winv[o]=n);
@@ -7006,6 +7018,7 @@ GQ_BANKS['materials'] = {
      explain:'תיאור מאקרוסקופי הוא מה שרואים ומודדים: תערובת הומוגנית נראית כנוזל אחיד אחד, ותערובת הטרוגנית נראית כשתי שכבות. אורך המולקולות והכוחות ביניהן הם תיאורים מיקרוסקופיים.'},
     {id:4,difficulty:'easy',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 12 סעיף ב (מותאם לרב-ברירה)',
      text:'בדיאגרמה מתואר הרכב האוויר ב-25°C: חנקן N₂ – 76.63%, חמצן O₂ – 20.56%, אדי מים H₂O – 1.86%, גזים אצילים, פחמן דו-חמצני ומימן – 0.95%. על פי הנתונים, האוויר הוא:',
+     fig:'<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת עוגה של הרכב האוויר" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><path d="M80 80 L80.0 10.0 A70 70 0 1 1 10.4 72.8 Z" fill="#3b82f6" stroke="#fff" stroke-width="1"/><path d="M80 80 L10.4 72.8 A70 70 0 0 1 67.7 11.1 Z" fill="#ef4444" stroke="#fff" stroke-width="1"/><path d="M80 80 L67.7 11.1 A70 70 0 0 1 75.8 10.1 Z" fill="#22c55e" stroke="#fff" stroke-width="1"/><path d="M80 80 L75.8 10.1 A70 70 0 0 1 80.0 10.0 Z" fill="#f59e0b" stroke="#fff" stroke-width="1"/></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px"><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#3b82f6;vertical-align:middle;margin:0 3px"></span>חנקן, N₂ – 76.63%<br><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ef4444;vertical-align:middle;margin:0 3px"></span>חמצן, O₂ – 20.56%<br><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span>אדי מים, H₂O – 1.86%<br><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#f59e0b;vertical-align:middle;margin:0 3px"></span>גזים אצילים, פחמן דו-חמצני ומימן – 0.95%</div>',
      options:['תרכובת של חנקן וחמצן','תערובת הומוגנית של גזים – יסודות ותרכובות','יסוד','תערובת הטרוגנית'],correct:[1],
      explain:'באוויר יש כמה חומרים שונים (N₂, O₂ – יסודות; H₂O, CO₂ – תרכובות) שחלקיקיהם מעורבים באופן אחיד ואינם קשורים זה לזה – תערובת הומוגנית. תרכובת היא חומר טהור אחד בעל נוסחה קבועה, ולאוויר אין נוסחה.'},
     {id:5,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 12 סעיף ב (מותאם לרב-ברירה)',
@@ -7149,7 +7162,7 @@ GQ_BANKS['precip'] = {
      explain:'הסוגריים מציינים שני יוני NO₃⁻ על כל יון Ca²⁺. כל יון חנקה נפרד וממוים: Ca²⁺(aq) + 2NO₃⁻(aq); מטען: +2 + 2×(−1) = 0. א׳: אין יון (NO₃)₂²⁻; ב׳: לא מאוזן – חסר NO₃⁻; ג׳: מטען היון החנקתי הוא 1−, לא 2− (והמטען הכולל −2 אינו מאוזן).'},
     {id:13,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 14 סעיף ג ii (מותאם לרב-ברירה)',
      text:'אשלגן יודי, KI(s), הוא חומר יוני. לפניכם ארבעה ניסוחים. איזה מהם מסמל תהליך המסה במים של KI(s)?',
-     options:['K⁺(l) + I⁻(l) → KI(s)   (Δ מעל החץ)','KI(s) → K⁺(aq) + I⁻(aq)   (H₂O(l) מעל החץ)','KI(s) + H₂O(l) → K⁺(aq) + I⁻(aq)','KI(s) → K⁺(l) + I⁻(l)   (Δ מעל החץ)'],correct:[1],
+     options:['<span dir="ltr" style="display:inline-block">K⁺(l) + I⁻(l) <span class="ovr"><small>Δ</small><span class="ovr-a">→</span></span> KI(s)</span>','<span dir="ltr" style="display:inline-block">KI(s) <span class="ovr"><small>H₂O(l)</small><span class="ovr-a">→</span></span> K⁺(aq) + I⁻(aq)</span>','<span dir="ltr" style="display:inline-block">KI(s) + H₂O(l) <span class="ovr"><small>&nbsp;</small><span class="ovr-a">→</span></span> K⁺(aq) + I⁻(aq)</span>','<span dir="ltr" style="display:inline-block">KI(s) <span class="ovr"><small>Δ</small><span class="ovr-a">→</span></span> K⁺(l) + I⁻(l)</span>'],correct:[1],
      explain:'בהמסה במים המוצק מתפרק ליונים ממוימים – (aq). המים הם הממס, ולכן מקומם מעל החץ ולא כמגיב (ג׳ שגויה). ניסוח ד׳ הוא היתוך – יונים במצב נוזל (l) בעקבות חימום; ניסוח א׳ הוא התהליך ההפוך להיתוך (התמצקות).'},
     {id:14,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 13 סעיף ו (מותאם לרב-ברירה)',
      text:'תמיסות עירוי מכילות לעיתים גלוקוז, C₆H₁₂O₆(s) – חומר מולקולרי המתמוסס היטב במים. מהו הניסוח הנכון של תהליך ההמסה במים של גלוקוז?',
@@ -7178,7 +7191,7 @@ GQ_BANKS['precip'] = {
      explain:'אחרי הערבוב יש בתמיסה Na⁺, CO₃²⁻, Ca²⁺ ו-Cl⁻. הצירופים החדשים האפשריים: NaCl (קל-תמס – לא שוקע) ו-CaCO₃ (קשה-תמס – שוקע). ניסוח הנטו כולל רק את היונים היוצרים את המשקע, והמשקע נכתב (s). ב-ד׳ המצב (aq) שגוי – חומר קשה-תמס אינו נשאר מומס. Na⁺ ו-Cl⁻ הם יונים צופים.'},
     {id:20,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 6',
      text:'לכל אחד משלושה כלים הכניסו 1 מול חומר, והוסיפו מים עד שהתקבלה תמיסה בנפח 1 ליטר. בדיאגרמה שלפניכם מוצג מספר המולים הכולל של חלקיקי החומר המומס בכל אחת משלוש התמיסות a, b ו-c. באיזו מן השורות א–ד החומרים המומסים בתמיסות a, b ו-c מוצגים בהתאם לדיאגרמה?',
-     fig:'<table class="gq-tbl"><tr><th>התמיסה</th><th>a</th><th>b</th><th>c</th></tr><tr><td>מספר המולים הכולל של חלקיקי המומס</td><td>2.0</td><td>3.0</td><td>1.0</td></tr></table>',
+     fig:'<svg width="262" height="174" viewBox="0 0 262 174" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת עמודות: a – 2.0 מול, b – 3.0 מול, c – 1.0 מול" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="46" y1="16" x2="46" y2="150" stroke="#475569" stroke-width="1.5"/><line x1="46" y1="150" x2="250" y2="150" stroke="#475569" stroke-width="1.5"/><line x1="42" y1="150" x2="250" y2="150" stroke="#cbd5e1" stroke-width="0"/><text x="38" y="154" font-size="11" text-anchor="end" fill="#334155">0.0</text><line x1="42" y1="110" x2="250" y2="110" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="114" font-size="11" text-anchor="end" fill="#334155">1.0</text><line x1="42" y1="70" x2="250" y2="70" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="74" font-size="11" text-anchor="end" fill="#334155">2.0</text><line x1="42" y1="30" x2="250" y2="30" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="34" font-size="11" text-anchor="end" fill="#334155">3.0</text><rect x="70" y="70" width="40" height="80" fill="#3b82f6" stroke="#1e3a8a"/><text x="90" y="65" font-size="12" font-weight="700" text-anchor="middle" fill="#111">2.0</text><text x="90" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">a</text><rect x="132" y="30" width="40" height="120" fill="#3b82f6" stroke="#1e3a8a"/><text x="152" y="25" font-size="12" font-weight="700" text-anchor="middle" fill="#111">3.0</text><text x="152" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">b</text><rect x="194" y="110" width="40" height="40" fill="#3b82f6" stroke="#1e3a8a"/><text x="214" y="105" font-size="12" font-weight="700" text-anchor="middle" fill="#111">1.0</text><text x="214" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">c</text></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px"><b>ציר אנכי:</b> מספר המולים הכולל של חלקיקי המומס (מול) &nbsp;·&nbsp; <b>ציר אופקי:</b> התמיסה</div>',
      options:['a: NaNO₃, b: Na₂SO₄, c: CH₃OH','a: CH₃OH, b: Na₂SO₄, c: NaNO₃','a: NaNO₃, b: CH₃OH, c: Na₂SO₄','a: Na₂SO₄, b: NaNO₃, c: CH₃OH'],correct:[0],
      explain:'כותבים את ניסוחי ההמסה: NaNO₃(s) → Na⁺(aq) + NO₃⁻(aq) – ממול אחד מתקבלים 2 מול יונים; Na₂SO₄(s) → 2Na⁺(aq) + SO₄²⁻(aq) – 3 מול יונים; CH₃OH חומר מולקולרי, CH₃OH(l) → CH₃OH(aq) – 1 מול מולקולות. לכן a (2.0) = NaNO₃, b (3.0) = Na₂SO₄, c (1.0) = CH₃OH.'},
     {id:21,difficulty:'medium',src:'בגרות קיץ תשפ"ד 2024, שאלון 37381, שאלה 14 סעיף ג (מותאם לרב-ברירה)',
@@ -7357,7 +7370,7 @@ GQ_BANKS['ptable'] = {
 
 GQ_BANKS['states'] = {
   title: 'מצבי צבירה ומעברים ביניהם',
-  desc: 'קביעת מצב צבירה מטבלת טמפרטורות, תיאור ברמה המאקרוסקופית, המיקרוסקופית ורמת הסמל, וניסוח מעברי מצב – בסגנון שאלון 37381',
+  desc: 'קביעת מצב צבירה מטבלת טמפרטורות, תיאור ברמה המאקרוסקופית, המיקרוסקופית ורמת הסמל, וניסוח מעברי מצב צבירה – בסגנון שאלון 37381',
   color: '#22c55e', color2: '#86efac',
   dav: '06/3a-states_of_matter.pdf', davTitle: 'מצגת השיעור – מצבי צבירה ומעברים ביניהם',
   icon: `<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="states-g1" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#15803d"/></radialGradient><filter id="states-sh"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#22c55e" flood-opacity=".5"/></filter></defs><path d="M30 44 Q44 30 56 20" fill="none" stroke="#86efac" stroke-width="3" stroke-dasharray="4 4" stroke-linecap="round"/><circle cx="12" cy="60" r="7" fill="url(#states-g1)" filter="url(#states-sh)"/><circle cx="26" cy="60" r="7" fill="url(#states-g1)" filter="url(#states-sh)"/><circle cx="19" cy="48" r="7" fill="url(#states-g1)" filter="url(#states-sh)"/><circle cx="40" cy="56" r="6" fill="url(#states-g1)" filter="url(#states-sh)"/><circle cx="50" cy="46" r="6" fill="url(#states-g1)" filter="url(#states-sh)"/><circle cx="60" cy="14" r="5" fill="url(#states-g1)" filter="url(#states-sh)"/><path d="M50 10 q4 -4 8 0" fill="none" stroke="#bbf7d0" stroke-width="2" stroke-linecap="round"/><path d="M62 24 q4 4 8 0" fill="none" stroke="#bbf7d0" stroke-width="2" stroke-linecap="round"/></svg>`,
@@ -7371,7 +7384,7 @@ GQ_BANKS['states'] = {
       <tr><td>גז</td><td><span class="fg">(g)</span></td><td>ממלא את כל הכלי, ניתן לדחיסה</td><td>מרחקים גדולים; תנועות תנודה, סיבוב ומעתק – מהירות ואקראיות</td></tr>
       <tr><td>מומס במים</td><td><span class="fg">(aq)</span></td><td colspan="2">חלקיקי החומר מפוזרים בין מולקולות המים (תמיסה מימית)</td></tr>
     </table>
-    <div class="gq-leg-title">🔁 מעברי מצב</div>
+    <div class="gq-leg-title">🔁 מעברי מצב צבירה</div>
     <table>
       <tr><th>מעבר</th><th>שם</th><th>דוגמה</th></tr>
       <tr><td>מוצק → נוזל</td><td>היתוך</td><td><span class="ex">H₂O(s) → H₂O(l)</span></td></tr>
@@ -7386,7 +7399,7 @@ GQ_BANKS['states'] = {
   easyFirst: true,
   perSession: 20,
   aiName: 'ד"ר צבירה',
-  ai: `אתה ד"ר צבירה – מורה כימיה לכיתה י בישראל, מומחה למצבי צבירה. נושאים מותרים: מוצק/נוזל/גז, טמפרטורת היתוך ורתיחה, קביעת מצב צבירה בטמפרטורה נתונה מטבלה, שלוש רמות תיאור (מאקרוסקופית – מה רואים ומודדים; מיקרוסקופית – מרחקים, סדר ותנועה של חלקיקים; רמת הסמל – s, l, g, aq), מעברי מצב (היתוך, הקפאה, אידוי/רתיחה, עיבוי, המראה, ריבוץ) וניסוחם, מה נשמר במעבר (זהות החלקיקים) ומה משתנה (מרחקים וכוחות בין החלקיקים), ובחומר מולקולרי לא נשברים קשרים קוולנטיים במעבר מצב. ענה בעברית פשוטה וקצרה. אל תחשוף תשובות – כוון בשאלות מנחות. הדרך לקבוע מצב צבירה: השווה את הטמפרטורה הנתונה לטמפרטורת ההיתוך ולטמפרטורת הרתיחה. אל תשתמש במונחים מחוץ לתוכנית: אנתלפיה, לחץ אדים, דיאגרמת פאזות.`,
+  ai: `אתה ד"ר צבירה – מורה כימיה לכיתה י בישראל, מומחה למצבי צבירה. נושאים מותרים: מוצק/נוזל/גז, טמפרטורת היתוך ורתיחה, קביעת מצב צבירה בטמפרטורה נתונה מטבלה, שלוש רמות תיאור (מאקרוסקופית – מה רואים ומודדים; מיקרוסקופית – מרחקים, סדר ותנועה של חלקיקים; רמת הסמל – s, l, g, aq), מעברי מצב צבירה (היתוך, הקפאה, אידוי/רתיחה, עיבוי, המראה, ריבוץ) וניסוחם, מה נשמר במעבר (זהות החלקיקים) ומה משתנה (מרחקים וכוחות בין החלקיקים), ובחומר מולקולרי לא נשברים קשרים קוולנטיים במעבר מצב צבירה. ענה בעברית פשוטה וקצרה. אל תחשוף תשובות – כוון בשאלות מנחות. הדרך לקבוע מצב צבירה: השווה את הטמפרטורה הנתונה לטמפרטורת ההיתוך ולטמפרטורת הרתיחה. אל תשתמש במונחים מחוץ לתוכנית: אנתלפיה, לחץ אדים, דיאגרמת פאזות.`,
   aiGreet: 'היי, אני ד"ר צבירה. טיפ: ציר טמפרטורה בראש – מתחת להיתוך מוצק, בין היתוך לרתיחה נוזל, מעל הרתיחה גז. תקוע? כתוב "לא הבנתי".',
   aiQuick: ['לא הבנתי את השאלה','תן לי רמז','איך קובעים מצב צבירה מטבלה?','מה נשמר במעבר מצב צבירה?'],
 
@@ -7395,7 +7408,7 @@ GQ_BANKS['states'] = {
     // ── מבוסס בגרויות ──
     {id:1,difficulty:'medium',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 5 סעיף א (מותאם לרב-ברירה)',
      text:'הגז אתאן, C₂H₆(g), משמש חומר מוצא בתעשיית החומרים הפלסטיים. גז אתאן נמצא בכלי סגור. מהו ההיגד הנכון ברמה המיקרוסקופית?',
-     options:['המולקולות צמודות זו לזו ונעות יחד בזרימה','המולקולות מסודרות במבנה קבוע ורועדות במקומן','המרחקים בין המולקולות גדולים מאוד ביחס לגודלן, והן נעות באופן אקראי בכל נפח הכלי','המולקולות מתפרקות לאטומי פחמן ומימן הנעים בחופשיות'],correct:[2],
+     options:['המולקולות צמודות זו לזו ונעות יחד בזרימה','המולקולות מסודרות במבנה קבוע ומתנודדות במקומן','המרחקים בין המולקולות גדולים מאוד ביחס לגודלן, והן נעות באופן אקראי בכל נפח הכלי','המולקולות מתפרקות לאטומי פחמן ומימן הנעים בחופשיות'],correct:[2],
      explain:'בגז המרחקים בין החלקיקים גדולים מאוד ביחס לגודלם, הכוחות ביניהם זניחים, והם נעים במהירות ובאופן אקראי בכל נפח הכלי. א – תיאור של נוזל; ב – תיאור של מוצק; ד – שגוי, מולקולות האתאן נשארות שלמות בגז.'},
     {id:2,difficulty:'hard',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 7 סעיף א (מותאם לרב-ברירה)',
      text:'ברום, Br₂(l), הוא נוזל בטמפרטורת החדר. איזה ניסוח מתאר נכון את תהליך האידוי של ברום בטמפרטורת הרתיחה שלו?',
@@ -7408,8 +7421,8 @@ GQ_BANKS['states'] = {
      explain:'חומר הוא נוזל כאשר הטמפרטורה נמצאת בין טמפרטורת ההיתוך לטמפרטורת הרתיחה. 25°C גבוה מ-−45 ונמוך מ-157 → A נוזל; 25°C גבוה מ-−114 ונמוך מ-78 → B נוזל.'},
     {id:4,difficulty:'hard',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 11 סעיף ד (מותאם לרב-ברירה)',
      text:'טמפרטורת ההיתוך של אתילן גליקול היא −13°C וטמפרטורת הרתיחה שלו היא 197°C. מהו ההיגד הנכון המתאר הבדל ברמה המיקרוסקופית בין אתילן גליקול בטמפרטורה של −25°C לבין אתילן גליקול בטמפרטורה של 250°C?',
-     options:['ב-−25°C המולקולות קטנות יותר מאשר ב-250°C','ב-250°C המולקולות מתפרקות לאטומי C, H ו-O','ב-−25°C המולקולות צפופות, מסודרות ורועדות במקומן; ב-250°C המרחקים בין המולקולות גדולים מאוד והן נעות בחופשיות בכל נפח הכלי','ב-−25°C החלקיקים אינם נעים כלל, וב-250°C המולקולות זורמות כנוזל'],correct:[2],
-     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: מולקולות צפופות ומסודרות שרק רועדות במקומן. ב-250°C (מעל טמפרטורת הרתיחה) החומר גז: מרחקים גדולים ותנועה חופשית. גודל המולקולות וזהותן אינם משתנים (א, ב שגויים). ד – במוצק יש תנועת רעידה, וב-250°C החומר גז ולא נוזל.'},
+     options:['ב-−25°C המולקולות קטנות יותר מאשר ב-250°C','ב-250°C המולקולות מתפרקות לאטומי C, H ו-O','ב-−25°C המולקולות צפופות, מסודרות ומתנודדות במקומן; ב-250°C המרחקים בין המולקולות גדולים מאוד והן נעות בחופשיות בכל נפח הכלי','ב-−25°C החלקיקים אינם נעים כלל, וב-250°C המולקולות זורמות כנוזל'],correct:[2],
+     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: מולקולות צפופות ומסודרות שרק מתנודדות במקומן. ב-250°C (מעל טמפרטורת הרתיחה) החומר גז: מרחקים גדולים ותנועה חופשית. גודל המולקולות וזהותן אינם משתנים (א, ב שגויים). ד – במוצק יש תנועת תנודה, וב-250°C החומר גז ולא נוזל.'},
     {id:5,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 9 סעיף ז (מותאם לרב-ברירה)',
      text:'"תמיסות המכילות את הכוהל אתאנול, C₂H₅OH(aq), בריכוזים שונים משמשות לניקוי משטחים. אחרי ניקוי המשטח, הכוהל מתנדף במהירות בלי להשאיר סימנים על המשטח." איזה ניסוח מתאר את התהליך המתואר בציטוט?',
      options:['C₂H₅OH(aq) → C₂H₅OH(s)','C₂H₅OH(aq) → C₂H₅OH(g)','C₂H₅OH(aq) → C₂H₄(g) + H₂O(g)','C₂H₅OH(aq) → 2C(s) + 3H₂(g) + ½O₂(g)'],correct:[1],
@@ -7445,9 +7458,9 @@ GQ_BANKS['states'] = {
     {id:13,difficulty:'easy',text:'איזה ניסוח מתאר את תהליך ההיתוך של קרח?',
      options:['H₂O(l) → H₂O(s)','H₂O(s) → H₂O(g)','H₂O(s) → H₂O(l)','2H₂O(s) → 2H₂(g) + O₂(g)'],correct:[2],
      explain:'היתוך: מוצק → נוזל, H₂O(s) → H₂O(l). א – הקפאה; ב – המראה; ד – פירוק מים ליסודותיהם, תגובה כימית ולא מעבר מצב צבירה.'},
-    {id:14,difficulty:'easy',text:'באיזה מצב צבירה החלקיקים צפופים, מסודרים במבנה קבוע ורועדים במקומם בלבד?',
+    {id:14,difficulty:'easy',text:'באיזה מצב צבירה החלקיקים צפופים, מסודרים במבנה קבוע ומתנודדים במקומם בלבד?',
      options:['מוצק','נוזל','גז','תמיסה'],correct:[0],
-     explain:'במוצק החלקיקים צפופים, מסודרים ורועדים במקומם – לכן למוצק צורה ונפח קבועים. בנוזל החלקיקים צפופים אך נעים וזורמים; בגז המרחקים גדולים והתנועה חופשית.'},
+     explain:'במוצק החלקיקים צפופים, מסודרים ומתנודדים במקומם – לכן למוצק צורה ונפח קבועים. בנוזל החלקיקים צפופים אך נעים וזורמים; בגז המרחקים גדולים והתנועה חופשית.'},
     {id:15,difficulty:'easy',text:'10 גרם מים נוזליים התאדו לחלוטין בכלי סגור. מהו ההיגד הנכון?',
      options:['מסת אדי המים 10 גרם, ומספר המולקולות לא השתנה','מסת אדי המים קטנה מ-10 גרם, כי המולקולות התרחקו זו מזו','מולקולות המים התפרקו למימן ולחמצן','מספר המולקולות גדל, כי הגז תופס נפח גדול יותר'],correct:[0],
      explain:'בשינוי מצב צבירה, החלקיקים עצמם נשמרים – אותן מולקולות H₂O, באותו מספר ובאותה מסה. משתנים רק המרחקים בין המולקולות (ולכן הנפח) והכוחות ביניהן.'},
@@ -7475,9 +7488,9 @@ GQ_BANKS['states'] = {
      fig:'<table class="gq-tbl"><tr><th>החומר</th><th>טמפרטורת היתוך (°C)</th><th>טמפרטורת רתיחה (°C)</th></tr><tr><td>X</td><td>80</td><td>220</td></tr><tr><td>Y</td><td>−10</td><td>95</td></tr></table>',
      options:['−20°C','25°C','90°C','150°C'],correct:[1],
      explain:'X מוצק מתחת ל-80°C; Y נוזל בין −10°C ל-95°C. הטמפרטורה היחידה המקיימת את שני התנאים היא 25°C. ב-−20°C שניהם מוצקים; ב-90°C שניהם נוזלים; ב-150°C X נוזל ו-Y גז.'},
-    {id:22,difficulty:'hard',text:'מה ההבדל בין הסימולים NaCl(l) ו-NaCl(aq)?',
-     options:['(l) מסמל מלח נוזלי טהור (נתך) בטמפרטורה גבוהה, ו-(aq) מסמל מלח מומס במים','שני הסימולים מתארים את אותו מצב – מלח בתוך נוזל','(aq) מסמל מלח נוזלי טהור, ו-(l) מסמל מלח מומס במים','(l) מסמל מלח מומס בכל נוזל, ו-(aq) מסמל מלח מומס במים בלבד'],correct:[0],
-     explain:'(l) הוא מצב צבירה נוזל של החומר הטהור – נתך NaCl מעל 801°C. (aq) אינו מצב צבירה אלא סימול לחומר המומס במים (תמיסה מימית), גם בטמפרטורת החדר.'},
+    {id:22,difficulty:'hard',text:'נתונים שני ניסוחים: NaCl(s) → Na⁺(l) + Cl⁻(l) וכן NaCl(s) → Na⁺(aq) + Cl⁻(aq). מה ההבדל בין הסימולים (l) ו-(aq)?',
+     options:['(l) מסמל יונים ניידים במלח נוזלי טהור (נתך) בטמפרטורה גבוהה, ו-(aq) מסמל יונים מומסים במים','שני הסימולים מתארים את אותו מצב – מלח בתוך נוזל','(aq) מסמל מלח נוזלי טהור, ו-(l) מסמל יונים מומסים במים','(l) מסמל מלח מומס בכל נוזל, ו-(aq) מסמל מלח מומס במים בלבד'],correct:[0],
+     explain:'(l) הוא מצב צבירה נוזל של החומר הטהור – נתך NaCl מעל 801°C. בנתך של חומר יוני היונים ניידים, ולכן רושמים Na⁺(l) + Cl⁻(l). (aq) אינו מצב צבירה אלא סימול לחומר המומס במים (תמיסה מימית), גם בטמפרטורת החדר.'},
   ]
 };
 
@@ -7936,7 +7949,7 @@ function openExam(){
 function examExit(){ if(EX.timer&&!EX.done){ if(!confirm('לצאת מהמבחן? ההתקדמות תאבד.')) return; clearInterval(EX.timer); EX.timer=null; } hide('exam-screen'); goHubRoot(); }
 function examBankQuestions(chId){
   const ch=CHAPTERS.find(c=>c.id===chId); const out=[];
-  ch.topics.forEach(t=>{const b=t.game&&GQ_BANKS[t.game]; if(!b||b.note) return; b.questions.forEach(q=>{ if(q.note||q.multi) return; out.push({...q,bank:t.game,topicTitle:t.title,ch:chId}); });});
+  ch.topics.forEach(t=>{const b=t.game&&GQ_BANKS[t.game]; if(!b||b.note) return; b.questions.forEach(q=>{ if(q.note||q.multi) return; out.push({...qShuffle(q),bank:t.game,topicTitle:t.title,ch:chId}); });});
   return out;
 }
 function examCompose(){
@@ -8410,7 +8423,7 @@ GQ_BANKS['solutions'] = {
      explain:'KBr: 0.2 × 0.4 = 0.08 mol Br⁻. MgBr₂: 0.1 × 0.4 = 0.04 mol → 0.08 mol Br⁻. סך הכול 0.16 mol (היגד II). הנפח הכולל 0.8 L → 0.16 ÷ 0.8 = 0.2 M (היגד IV). 0.12 מול מתקבל כששוכחים להכפיל ב-2 עבור MgBr₂.'},
     {id:6,difficulty:'easy',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 6',
      text:'לכל אחד משלושה כלים הכניסו 1 מול חומר, והוסיפו מים עד שהתקבלה תמיסה בנפח 1 ליטר. בדיאגרמה מוצג מספר המולים הכולל של חלקיקי החומר המומס בכל אחת משלוש התמיסות a, b ו-c. באיזו מן השורות החומרים המומסים בתמיסות a, b ו-c מוצגים בהתאם לדיאגרמה?',
-     fig:'<table class="gq-tbl"><tr><th>תמיסה</th><th>a</th><th>b</th><th>c</th></tr><tr><td>מולים כולל של חלקיקי המומס</td><td>2.0</td><td>3.0</td><td>1.0</td></tr></table>',
+     fig:'<svg width="262" height="174" viewBox="0 0 262 174" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת עמודות: a – 2.0 מול, b – 3.0 מול, c – 1.0 מול" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="46" y1="16" x2="46" y2="150" stroke="#475569" stroke-width="1.5"/><line x1="46" y1="150" x2="250" y2="150" stroke="#475569" stroke-width="1.5"/><line x1="42" y1="150" x2="250" y2="150" stroke="#cbd5e1" stroke-width="0"/><text x="38" y="154" font-size="11" text-anchor="end" fill="#334155">0.0</text><line x1="42" y1="110" x2="250" y2="110" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="114" font-size="11" text-anchor="end" fill="#334155">1.0</text><line x1="42" y1="70" x2="250" y2="70" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="74" font-size="11" text-anchor="end" fill="#334155">2.0</text><line x1="42" y1="30" x2="250" y2="30" stroke="#cbd5e1" stroke-width="1"/><text x="38" y="34" font-size="11" text-anchor="end" fill="#334155">3.0</text><rect x="70" y="70" width="40" height="80" fill="#3b82f6" stroke="#1e3a8a"/><text x="90" y="65" font-size="12" font-weight="700" text-anchor="middle" fill="#111">2.0</text><text x="90" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">a</text><rect x="132" y="30" width="40" height="120" fill="#3b82f6" stroke="#1e3a8a"/><text x="152" y="25" font-size="12" font-weight="700" text-anchor="middle" fill="#111">3.0</text><text x="152" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">b</text><rect x="194" y="110" width="40" height="40" fill="#3b82f6" stroke="#1e3a8a"/><text x="214" y="105" font-size="12" font-weight="700" text-anchor="middle" fill="#111">1.0</text><text x="214" y="166" font-size="13" font-weight="700" text-anchor="middle" fill="#111">c</text></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px"><b>ציר אנכי:</b> מספר המולים הכולל של חלקיקי המומס (מול) &nbsp;·&nbsp; <b>ציר אופקי:</b> התמיסה</div>',
      options:['a: NaNO₃, b: Na₂SO₄, c: CH₃OH','a: CH₃OH, b: Na₂SO₄, c: NaNO₃','a: NaNO₃, b: CH₃OH, c: Na₂SO₄','a: Na₂SO₄, b: NaNO₃, c: CH₃OH'],correct:[0],
      explain:'NaNO₃(s) → Na⁺ + NO₃⁻: 2 מול יונים ממול אחד. Na₂SO₄(s) → 2Na⁺ + SO₄²⁻: 3 מול יונים. CH₃OH הוא חומר מולקולרי שמתמוסס כמולקולות שלמות: 1 מול חלקיקים. לכן a = NaNO₃ (2), b = Na₂SO₄ (3), c = CH₃OH (1).'},
     {id:7,difficulty:'hard',src:'בגרות קיץ תשפ"ב 2022, שאלון 037381, שאלה 6',
@@ -9419,6 +9432,7 @@ GQ_BANKS['neutral'] = {
      explain:'מולי H₂SO₄: 0.25 × 0.02 = 0.005 מול → 0.01 מול H₃O⁺. לסתירה מלאה דרושים 0.01 מול OH⁻, המתקבלים מ-0.005 מול Ca(OH)₂ (כל מול נותן 2 מול OH⁻). הריכוז: 0.005 / 0.05 = 0.1M. (או ישירות: יחס H₂SO₄ : Ca(OH)₂ הוא 1:1.) התשובה 0.2M נובעת מהשמטת הגורם 2 של ההידרוקסיד.'},
     {id:23,difficulty:'hard',src:'בגרות קיץ תשע"ו 2016, שאלון 037303 (27), 3 יחידות לימוד, שאלה 13 סעיף ג i (מותאם לרב-ברירה)',
      text:'ל-100 מ"ל תמיסת HNO₃(aq) בריכוז 0.1M הוסיפו שלושה מוצקים בזה אחר זה: A – 0.56 גרם KOH(s); B – 1.71 גרם Ba(OH)₂(s); C – 1.8 גרם גלוקוז. בגרף ה-pH כתלות בזמן: בזמן t₁ ה-pH עלה בחדות ל-7 בדיוק, בזמן t₂ לא השתנה, ובזמן t₃ עלה אל מעל 7. מהו המוצק שהוסיפו בזמן t₁?',
+     fig:'<svg width="310" height="190" viewBox="0 0 310 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="גרף pH כתלות בזמן: עלייה חדה ל-7 בזמן t₁, ללא שינוי בזמן t₂, עלייה אל מעל 7 בזמן t₃" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="40" y1="165" x2="40" y2="14" stroke="#475569" stroke-width="1.5"/><polygon points="40,8 36,16 44,16" fill="#475569"/><line x1="40" y1="165" x2="296" y2="165" stroke="#475569" stroke-width="1.5"/><polygon points="302,165 294,161 294,169" fill="#475569"/><text x="24" y="14" font-size="12" font-weight="700" fill="#111">pH</text><text x="290" y="184" font-size="12" font-weight="700" text-anchor="middle" fill="#111" direction="rtl">זמן</text><text x="34" y="169" font-size="11" text-anchor="end" fill="#334155">0</text><line x1="37" y1="165" x2="40" y2="165" stroke="#475569"/><text x="34" y="99" font-size="11" text-anchor="end" fill="#334155">7</text><line x1="37" y1="95" x2="40" y2="95" stroke="#475569"/><text x="34" y="29" font-size="11" text-anchor="end" fill="#334155">14</text><line x1="37" y1="25" x2="40" y2="25" stroke="#475569"/><line x1="40" y1="95" x2="290" y2="95" stroke="#94a3b8" stroke-dasharray="4 4"/><line x1="100" y1="165" x2="100" y2="22" stroke="#cbd5e1" stroke-dasharray="2 4"/><text x="100" y="180" font-size="12" text-anchor="middle" fill="#111">t₁</text><line x1="165" y1="165" x2="165" y2="22" stroke="#cbd5e1" stroke-dasharray="2 4"/><text x="165" y="180" font-size="12" text-anchor="middle" fill="#111">t₂</text><line x1="230" y1="165" x2="230" y2="22" stroke="#cbd5e1" stroke-dasharray="2 4"/><text x="230" y="180" font-size="12" text-anchor="middle" fill="#111">t₃</text><polyline points="40,155 100,155 104,95 230,95 234,40 288,40" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/></svg>',
      options:['A – KOH, כי 0.01 מול OH⁻ סותרים בדיוק 0.01 מול H₃O⁺','B – Ba(OH)₂, כי מסתו הגדולה ביותר','C – גלוקוז, כי הוא מתמוסס ראשון','A – KOH, כי הוא בסיס חזק יותר מ-Ba(OH)₂'],correct:[0],
      explain:'מולי H₃O⁺: 0.1 × 0.1 = 0.01 מול. KOH: 0.56/56 = 0.01 מול → 0.01 מול OH⁻ – בדיוק סתירה מלאה → pH = 7. Ba(OH)₂: 1.71/171 = 0.01 מול → 0.02 מול OH⁻ – עודף בסיס → pH > 7 (זה t₃). גלוקוז אינו משנה pH (t₂). ההכרעה לפי כמות המולים, לא לפי "חוזק".'},
     {id:24,difficulty:'hard',src:'בגרות קיץ תשפ"ד 2024, שאלון 37381, שאלה 12 סעיף ה (מותאם לרב-ברירה)',
@@ -9480,18 +9494,18 @@ GQ_BANKS['enthalpy'] = {
      options:['התגובה היא אקסותרמית ולכן נרשום ΔH = −50 קילוג\'אול','התגובה היא אקסותרמית ולכן נרשום ΔH = +50 קילוג\'אול','התגובה היא אנדותרמית ולכן נרשום ΔH = −50 קילוג\'אול','התגובה היא אנדותרמית ולכן נרשום ΔH = +50 קילוג\'אול'],correct:[0],
      explain:'אנרגיה שנפלטת מהמערכת אל הסביבה – תגובה אקסותרמית, ו-ΔH שלילי: ΔH = −50 kJ. סימן חיובי מתאים לתגובה אנדותרמית שבה המערכת קולטת אנרגיה.'},
     {id:2,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 8',
-     text:'נתון ניסוח התגובה: N₂(g) + 3H₂(g) → 2NH₃(g)  ΔH⁰ = −92 kJ. לפניכם תיאור של ארבע דיאגרמות אנתלפיה I–IV. איזו מהן נכונה?',
-     fig:'<div class="cf">I – N₂(g) + 3H₂(g) ברמה גבוהה, 2NH₃(g) ברמה נמוכה, חץ כלפי מטה: −92 kJ<br>II – 2N(g) + 6H(g) ברמה גבוהה, 2NH₃(g) ברמה נמוכה, חץ כלפי מטה: −92 kJ<br>III – N₂(g) + 3H₂(g) ברמה נמוכה, 2NH₃(l) ברמה גבוהה, חץ כלפי מעלה: 92 kJ<br>IV – 2N(g) + 6H(g) ברמה גבוהה, 2NH₃(l) ברמה נמוכה, חץ כלפי מטה: −92 kJ</div>',
+     text:'נתון ניסוח התגובה: N₂(g) + 3H₂(g) → 2NH₃(g)  ΔH⁰ = −92 kJ. לפניכם ארבע דיאגרמות אנתלפיה I–IV. איזו מהן נכונה?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">N₂(g) + 3H₂(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">2NH₃(g)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">−92 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה I</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">2N(g) + 6H(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">2NH₃(g)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">−92 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה II</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">2NH₃(l)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">N₂(g) + 3H₂(g)</text><line x1="185" y1="122.6" x2="185" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">92 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה III</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">2N(g) + 6H(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">2NH₃(l)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">−92 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה IV</div></div></div>',
      options:['דיאגרמה I','דיאגרמה II','דיאגרמה III','דיאגרמה IV'],correct:[0],
      explain:'ΔH⁰ מתייחס לניסוח כפי שנכתב: המגיבים הם המולקולות N₂(g) ו-H₂(g) (לא אטומים בודדים) והתוצר הוא NH₃(g) (לא נוזל). התגובה אקסותרמית (ΔH⁰ < 0) – המגיבים ברמה גבוהה והתוצרים ברמה נמוכה. II ו-IV מתארים אטומים חופשיים, III מתאר תגובה אנדותרמית ותוצר נוזלי.'},
     {id:3,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 8',
-     text:'לפניכם תיאור של דיאגרמת שינויי אנתלפיה של ברום. מהו הערך של אנתלפיית האידוי של ברום?',
-     fig:'<div class="cf">ארבע רמות, מהנמוכה לגבוהה:<br>Br₂(s) → Br₂(l): עלייה של 10 kJ<br>Br₂(l) → Br₂(g): עלייה של 30 kJ<br>Br₂(g) → 2Br(g): עלייה של 193 kJ</div>',
+     text:'לפניכם דיאגרמת שינויי אנתלפיה של ברום. מהו הערך של אנתלפיית האידוי של ברום?',
+     fig:'<svg width="250" height="230" viewBox="0 0 250 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="226" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="212.2" x2="242" y2="212.2" stroke="#111" stroke-width="2"/><text x="105.0" y="207.2" font-size="11.5" text-anchor="middle" fill="#111">Br₂(s)</text><line x1="30" y1="175.8" x2="242" y2="175.8" stroke="#111" stroke-width="2"/><text x="105.0" y="170.8" font-size="11.5" text-anchor="middle" fill="#111">Br₂(l)</text><line x1="30" y1="125.8" x2="242" y2="125.8" stroke="#111" stroke-width="2"/><text x="105.0" y="120.8" font-size="11.5" text-anchor="middle" fill="#111">Br₂(g)</text><line x1="30" y1="41.4" x2="242" y2="41.4" stroke="#111" stroke-width="2"/><text x="105.0" y="36.4" font-size="11.5" text-anchor="middle" fill="#111">2Br(g)</text><line x1="215" y1="210.2" x2="215" y2="177.8" stroke="#dc2626" stroke-width="2"/><polygon points="215,177.8 210,186.8 220,186.8" fill="#dc2626"/><text x="208" y="198.0" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">10 kJ</text><line x1="215" y1="173.8" x2="215" y2="127.8" stroke="#dc2626" stroke-width="2"/><polygon points="215,127.8 210,136.8 220,136.8" fill="#dc2626"/><text x="208" y="154.8" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">30 kJ</text><line x1="215" y1="123.8" x2="215" y2="43.4" stroke="#dc2626" stroke-width="2"/><polygon points="215,43.4 210,52.4 220,52.4" fill="#dc2626"/><text x="208" y="87.6" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">193 kJ</text></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">הדיאגרמה אינה בקנה מידה</div>',
      options:['10 kJ/mol','30 kJ/mol','40 kJ/mol','223 kJ/mol'],correct:[1],
      explain:'אנתלפיית האידוי היא שינוי האנתלפיה במעבר מנוזל לגז: Br₂(l) → Br₂(g), ΔH⁰ = +30 kJ. 10 kJ הוא ההיתוך (מוצק → נוזל); 40 kJ הוא סכום היתוך ואידוי (המראה); 223 kJ הוא סכום האידוי ופירוק המולקולות לאטומים.'},
     {id:4,difficulty:'medium',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 7 סעיף א (מותאם לרב-ברירה)',
      text:'אנתלפיית האידוי של ברום, Br₂(l), בטמפרטורת הרתיחה היא ΔHᵥ⁰ = 30.0 kJ/mol. לפניכם שלוש דיאגרמות אנתלפיה, בכל אחת שתי רמות במרחק 30.0 kJ. איזו דיאגרמה מציגה נכון את שינוי האנתלפיה בתהליך האידוי של Br₂(l)?',
-     fig:'<div class="cf">I – Br₂(l) ברמה הגבוהה, Br₂(g) ברמה הנמוכה<br>II – 2Br(g) ברמה הגבוהה, Br₂(l) ברמה הנמוכה<br>III – Br₂(g) ברמה הגבוהה, Br₂(l) ברמה הנמוכה</div>',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">Br₂(l)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">Br₂(g)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">30.0 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה I</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">2Br(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">Br₂(l)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">30.0 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה II</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">Br₂(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">Br₂(l)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">30.0 kJ</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה III</div></div></div>',
      options:['דיאגרמה I','דיאגרמה II','דיאגרמה III','דיאגרמות I ו-III שתיהן נכונות'],correct:[2],
      explain:'אידוי הוא Br₂(l) → Br₂(g) – תהליך אנדותרמי, ולכן הגז ברמה הגבוהה והנוזל ברמה הנמוכה (III). ברום בנוי ממולקולות Br₂ גם בגז, ולכן II (אטומים) שגוי. I מתאר עיבוי (אקסותרמי).'},
     {id:5,difficulty:'hard',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 7 סעיף ב (מותאם לרב-ברירה)',
@@ -9536,8 +9550,8 @@ GQ_BANKS['enthalpy'] = {
      options:['הידיים קולטות אנרגיה; תחושת ההתחממות נובעת מתגובה (1) – המסת האתאנול במים','הידיים פולטות אנרגיה; תחושת ההתחממות נובעת מתגובה (2) – אידוי האתאנול','הידיים קולטות אנרגיה; תחושת ההתחממות נובעת מתגובה (2) – אידוי האתאנול','הידיים פולטות אנרגיה; תחושת ההתחממות נובעת מתגובה (1) – המסת האתאנול במים'],correct:[0],
      explain:'הידיים הן הסביבה. טמפרטורתן עולה – כלומר הן קלטו אנרגיה שנפלטה מהמערכת. תהליך שפולט אנרגיה הוא אקסותרמי (ΔH⁰ < 0) – תגובה (1), המסת האתאנול במים. אידוי (2) הוא אנדותרמי והיה גורם לתחושת קור.'},
     {id:15,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 13 סעיף ו (מותאם לרב-ברירה)',
-     text:'אלכוג\'ל דליק ועלול לגרום לשרפה: C₂H₅OH(l) + 3O₂(g) → 2CO₂(g) + 3H₂O(g). לפניכם תיאור של ארבע דיאגרמות אנתלפיה. איזו מתארת נכון את שינוי האנתלפיה בתגובת השרפה של אתאנול?',
-     fig:'<div class="cf">דיאגרמה 1 – C₂H₅OH(l) + 3O₂(g) ברמה גבוהה, 2CO₂(g) + 3H₂O(g) ברמה נמוכה, ΔH⁰ &lt; 0<br>דיאגרמה 2 – 2CO₂(g) + 3H₂O(g) ברמה גבוהה, C₂H₅OH(l) + 3O₂(g) ברמה נמוכה, ΔH⁰ &gt; 0<br>דיאגרמה 3 – C₂H₅OH(l) ברמה גבוהה, C₂H₅OH(g) ברמה נמוכה, ΔH⁰ &lt; 0<br>דיאגרמה 4 – C₂H₅OH(g) ברמה גבוהה, C₂H₅OH(l) ברמה נמוכה, ΔH⁰ &gt; 0</div>',
+     text:'אלכוג\'ל דליק ועלול לגרום לשרפה: C₂H₅OH(l) + 3O₂(g) → 2CO₂(g) + 3H₂O(g). לפניכם ארבע דיאגרמות אנתלפיה. איזו מתארת נכון את שינוי האנתלפיה בתגובת השרפה של אתאנול?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="225" height="150" viewBox="0 0 225 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="217" y2="46.2" stroke="#111" stroke-width="2"/><text x="107.5" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(l) + 3O₂(g)</text><line x1="30" y1="124.6" x2="217" y2="124.6" stroke="#111" stroke-width="2"/><text x="107.5" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">2CO₂(g) + 3H₂O(g)</text><line x1="200" y1="48.2" x2="200" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="200,122.6 195,113.6 205,113.6" fill="#dc2626"/><text x="193" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &lt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה 1</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="225" height="150" viewBox="0 0 225 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="217" y2="46.2" stroke="#111" stroke-width="2"/><text x="107.5" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">2CO₂(g) + 3H₂O(g)</text><line x1="30" y1="124.6" x2="217" y2="124.6" stroke="#111" stroke-width="2"/><text x="107.5" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(l) + 3O₂(g)</text><line x1="200" y1="122.6" x2="200" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="200,48.2 195,57.2 205,57.2" fill="#dc2626"/><text x="193" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &gt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה 2</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="225" height="150" viewBox="0 0 225 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="217" y2="46.2" stroke="#111" stroke-width="2"/><text x="107.5" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(l)</text><line x1="30" y1="124.6" x2="217" y2="124.6" stroke="#111" stroke-width="2"/><text x="107.5" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(g)</text><line x1="200" y1="48.2" x2="200" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="200,122.6 195,113.6 205,113.6" fill="#dc2626"/><text x="193" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &lt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה 3</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="225" height="150" viewBox="0 0 225 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="217" y2="46.2" stroke="#111" stroke-width="2"/><text x="107.5" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(g)</text><line x1="30" y1="124.6" x2="217" y2="124.6" stroke="#111" stroke-width="2"/><text x="107.5" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₅OH(l)</text><line x1="200" y1="122.6" x2="200" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="200,48.2 195,57.2 205,57.2" fill="#dc2626"/><text x="193" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &gt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה 4</div></div></div>',
      options:['דיאגרמה 1','דיאגרמה 2','דיאגרמה 3','דיאגרמה 4'],correct:[0],
      explain:'שרפה היא תגובה אקסותרמית – המגיבים (אתאנול וחמצן) ברמה גבוהה והתוצרים ברמה נמוכה, ΔH⁰ < 0 (דיאגרמה 1). דיאגרמה 2 מתארת תגובה אנדותרמית; דיאגרמות 3 ו-4 מתארות אידוי ולא שרפה, ובנוסף דיאגרמה 3 מציגה אידוי כאקסותרמי – שגוי.'},
     {id:16,difficulty:'easy',src:'בגרות קיץ תשפ"ב 2022, שאלון 037381, שאלה 9 סעיף ה (מותאם לרב-ברירה)',
@@ -9550,6 +9564,7 @@ GQ_BANKS['enthalpy'] = {
      explain:'ירידת טמפרטורת הסביבה מעידה שאנרגיה עברה מהסביבה אל המערכת (המוצקים המתפרקים). קליטת אנרגיה על ידי המערכת – תגובה אנדותרמית, ΔH⁰ > 0.'},
     {id:18,difficulty:'medium',src:'בגרות קיץ תשפ"ב 2022, שאלון 037381, שאלה 11 סעיף ה (מותאם לרב-ברירה)',
      text:'המיסו 0.2 מול KCl(s) ב-200 מ"ל מים בכלי לא מבודד. טמפרטורת המים ההתחלתית 22°C; במהלך ההמסה ירדה הטמפרטורה לכ-19°C, ואחר כך עלתה בהדרגה לכ-21°C. דיאגרמה a: ΔH⁰ < 0; דיאגרמה b: ΔH⁰ > 0. איזו דיאגרמה מתארת נכון את ההמסה, ומדוע?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">KCl(s)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">K⁺(aq) + Cl⁻(aq)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &lt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה a</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">K⁺(aq) + Cl⁻(aq)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">KCl(s)</text><line x1="185" y1="122.6" x2="185" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/><text x="178" y="89.4" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">ΔH⁰ &gt; 0</text></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה b</div></div></div>',
      options:['דיאגרמה b – המים הם הסביבה; טמפרטורת המים ירדה, כלומר המערכת קלטה אנרגיה מהסביבה','דיאגרמה a – המים הם המערכת; טמפרטורת המים ירדה, כלומר המערכת פלטה אנרגיה','דיאגרמה a – המסה של מלח במים היא תמיד תהליך אקסותרמי','דיאגרמה b – הטמפרטורה עלתה שוב אחרי 2 דקות, ולכן בסוף נפלטה אנרגיה מהמערכת'],correct:[0],
      explain:'המערכת היא תהליך ההמסה של KCl; המים בכוס הם הסביבה. טמפרטורת המים ירדה – הסביבה איבדה אנרגיה שעברה אל המערכת. תהליך אנדותרמי: ΔH⁰ > 0, דיאגרמה b (תוצרים מעל מגיבים). העלייה המאוחרת בטמפרטורה נובעת מקליטת אנרגיה מהאוויר שבחדר, כי הכלי אינו מבודד.'},
     {id:19,difficulty:'medium',src:'בגרות קיץ תשפ"ה 2025, שאלון 37381, שאלה 9 סעיף ז (מותאם לרב-ברירה)',
@@ -9557,8 +9572,8 @@ GQ_BANKS['enthalpy'] = {
      options:['תגובות (1) ו-(2) אנדותרמיות – הן קולטות אנרגיה מהסביבה, ולכן יש לספק אנרגיה ברציפות כדי שיימשכו','תגובות (1) ו-(2) אקסותרמיות – האנרגיה שנפלטת מתפזרת ויש להחזירה למכל','הניצוצות נדרשים רק להתנעת התגובות, ואחר כך הן ממשיכות מעצמן','האנרגיה דרושה רק לאידוי המים שבתערובת'],correct:[0],
      explain:'ΔH⁰ > 0 לשתי התגובות – הן אנדותרמיות וקולטות אנרגיה מהסביבה. ללא אספקת אנרגיה מתמדת (ניצוצות המדמים ברקים) התגובות לא יימשכו. תגובה אנדותרמית אינה "ממשיכה מעצמה" אחרי התנעה.'},
     {id:20,difficulty:'medium',src:'בגרות קיץ תשפ"ה 2025, שאלון 37381, שאלה 13 סעיף ה (מותאם לרב-ברירה)',
-     text:'לפניכם תיאור של ארבע דיאגרמות אנרגיה a–d. איזו מהן מתארת נכון את שינוי האנרגיה בתהליך האידוי של אתאן, C₂H₆?',
-     fig:'<div class="cf">a – C₂H₆(l) ברמה נמוכה, C₂H₆(g) ברמה גבוהה, חץ כלפי מעלה<br>b – C₂H₆(g) ברמה נמוכה, C₂H₆(l) ברמה גבוהה, חץ כלפי מעלה<br>c – C₂H₆(g) ברמה נמוכה, C₂H₂(g) + 2H₂(g) ברמה גבוהה, חץ כלפי מעלה<br>d – C₂H₆(l) ברמה נמוכה, C₂H₆(g) ברמה גבוהה, חץ כלפי מטה</div>',
+     text:'לפניכם ארבע דיאגרמות אנרגיה a–d. איזו מהן מתארת נכון את שינוי האנרגיה בתהליך האידוי של אתאן, C₂H₆?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(l)</text><line x1="185" y1="122.6" x2="185" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה a</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(l)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(g)</text><line x1="185" y1="122.6" x2="185" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה b</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₂(g) + 2H₂(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(g)</text><line x1="185" y1="122.6" x2="185" y2="48.2" stroke="#dc2626" stroke-width="2"/><polygon points="185,48.2 180,57.2 190,57.2" fill="#dc2626"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה c</div></div><div style="display:inline-block;margin:4px 6px;vertical-align:top"><svg width="210" height="150" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="146" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="46.2" x2="202" y2="46.2" stroke="#111" stroke-width="2"/><text x="100.0" y="41.2" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(g)</text><line x1="30" y1="124.6" x2="202" y2="124.6" stroke="#111" stroke-width="2"/><text x="100.0" y="119.6" font-size="11.5" text-anchor="middle" fill="#111">C₂H₆(l)</text><line x1="185" y1="48.2" x2="185" y2="122.6" stroke="#dc2626" stroke-width="2"/><polygon points="185,122.6 180,113.6 190,113.6" fill="#dc2626"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">דיאגרמה d</div></div></div>',
      options:['דיאגרמה a','דיאגרמה b','דיאגרמה c','דיאגרמה d'],correct:[0],
      explain:'אידוי C₂H₆(l) → C₂H₆(g) הוא תהליך אנדותרמי: נדרשת אנרגיה כדי להתגבר על אינטראקציות ון-דר-ואלס בין מולקולות האתאן בנוזל. לכן רמת הגז גבוהה מרמת הנוזל והחץ מהנוזל כלפי מעלה (a). ב-b הגז נמוך מהנוזל; c מתאר תגובה כימית ולא אידוי; d מציג אידוי כאקסותרמי.'},
 
@@ -9583,7 +9598,7 @@ GQ_BANKS['enthalpy'] = {
      explain:'8 ÷ 16 = 0.5 מול CH₄. Q = n · ΔH = 0.5 × 890 = 445 kJ נפלטים. 890 kJ מתאים למול שלם; 1780 נובע מהכפלה במקום חילוק; 111 נובע מחילוק ב-8 גרם ללא מעבר למולים.'},
     {id:27,difficulty:'hard',text:'נתון: H₂O(s) → H₂O(l)  ΔH⁰ = +6.0 kJ;  H₂O(l) → H₂O(g)  ΔH⁰ = +40.7 kJ. מהו ההיגד הנכון?',
      options:['באידוי מנתקים את קשרי המימן בין המולקולות כמעט לחלוטין, ואילו בהיתוך הם רק נחלשים – לכן אנתלפיית האידוי גדולה מאנתלפיית ההיתוך','בהיתוך נשברים קשרים קוולנטיים O–H, ולכן הוא דורש אנרגיה','ΔH⁰ של העיבוי H₂O(g) → H₂O(l) הוא +40.7 kJ','שני התהליכים אקסותרמיים, כי במהלכם נקלטת אנרגיה'],correct:[0],
-     explain:'במעברי מצב לא נשברים קשרים קוולנטיים – רק אינטראקציות בין המולקולות (כאן קשרי מימן). בהיתוך הן נחלשות (עדיין קיימות בנוזל), באידוי הן מנותקות – לכן ΔHᵥ⁰ > ΔH_היתוך. עיבוי הוא התהליך ההפוך לאידוי: −40.7 kJ. היתוך ואידוי קולטים אנרגיה – אנדותרמיים.'},
+     explain:'במעברי מצב צבירה לא נשברים קשרים קוולנטיים – רק אינטראקציות בין המולקולות (כאן קשרי מימן). בהיתוך הן נחלשות (עדיין קיימות בנוזל), באידוי הן מנותקות – לכן ΔHᵥ⁰ > ΔH_היתוך. עיבוי הוא התהליך ההפוך לאידוי: −40.7 kJ. היתוך ואידוי קולטים אנרגיה – אנדותרמיים.'},
     {id:28,difficulty:'easy',text:'אנתלפיית ההיתוך של קרח היא 6.0 kJ/mol. מהו ΔH⁰ של הקפאת 1 מול מים, H₂O(l) → H₂O(s)?',
      options:['−6.0 kJ','+6.0 kJ','0 kJ','−40.7 kJ'],correct:[0],
      explain:'הקפאה היא התהליך ההפוך להיתוך, ולכן ΔH⁰ מתהפך בסימנו: −6.0 kJ. בהקפאה נוצרים קשרי מימן נוספים בין המולקולות ונפלטת אנרגיה – תהליך אקסותרמי (לכן המים בכוס מקררים את הסביבה כשהם מתחממים, ולא כשהם קופאים).'},
@@ -9598,7 +9613,7 @@ GQ_BANKS['enthalpy'] = {
 // כותרות התפיסות (זהות בכל מקום):
 //   A1  חלקיק אחד = החומר
 //   A2  בלבול בין מאקרו, מיקרו וסמל
-//   A3  במעבר מצב נשברים קשרים קוולנטיים
+//   A3  במעבר מצב צבירה נשברים קשרים קוולנטיים
 //   A4  המסה = שינוי כימי
 //   A5  תערובת ↔ תרכובת
 //   A6  סימול חומר ↔ סימול חלקיק
@@ -9617,9 +9632,9 @@ gqBankTraps('states',[
    src:'חוברת המפמ"ר – ניתוח בגרויות "מבנה וקישור"'},
   {title:'בלבול בין מאקרו, מיקרו וסמל',
    wrong:'"בקיפאון המולקולות נעצרות לגמרי", "בחימום המולקולות מתרחבות", "הגז קל כי המולקולות שלו קלות".',
-   right:'במעבר מצב משתנים רק המרחקים, הסדר ואנרגיית התנועה של החלקיקים – לא גודלם, מסתם או זהותם. גם במוצק החלקיקים רועדים במקומם.',
+   right:'במעבר מצב צבירה משתנים רק המרחקים, הסדר ואנרגיית התנועה של החלקיקים – לא גודלם, מסתם או זהותם. גם במוצק החלקיקים מתנודדים במקומם.',
    src:'חוברת המפמ"ר – ניתוח בגרויות "מבנה וקישור"'},
-  {title:'במעבר מצב נשברים קשרים קוולנטיים',
+  {title:'במעבר מצב צבירה נשברים קשרים קוולנטיים',
    wrong:'"כשמים רותחים הם מתפרקים למימן וחמצן": H₂O(l) → H₂(g) + O₂(g).',
    right:'ברתיחה, היתוך ואידוי של חומר מולקולרי נחלשים רק הכוחות בין המולקולות; המולקולה נשארת שלמה: H₂O(l) → H₂O(g), Br₂(l) → Br₂(g).',
    src:'חוברת המפמ"ר – ניתוח בגרויות "מבנה וקישור"'},
@@ -9696,7 +9711,7 @@ gqBankTraps('lang2',[
    wrong:'"הנר נעלם – המסה ירדה"; "הברזל החליד ונעשה כבד יותר מעצמו".',
    right:'בשריפה המגיב הנוסף הוא O₂ מהאוויר והתוצרים (CO₂, H₂O) גזים שמתפזרים. במערכת סגורה המסה נשמרת בדיוק.',
    src:'ספרות מחקר בהוראת הכימיה'},
-  {title:'במעבר מצב נשברים קשרים קוולנטיים',
+  {title:'במעבר מצב צבירה נשברים קשרים קוולנטיים',
    wrong:'"רתיחת מים היא פירוק": H₂O(l) → H₂(g) + O₂(g); "התאדות היא תגובה כימית".',
    right:'פירוק הוא תגובה כימית שבה נוצרים חומרים חדשים: 2H₂O(l) → 2H₂(g) + O₂(g) (דרוש זרם חשמלי). ברתיחה המולקולות נשארות H₂O.',
    src:'חוברת המפמ"ר – ניתוח בגרויות "מבנה וקישור"'},
@@ -9731,25 +9746,25 @@ gqBankTraps('balance',[
 
 // ───────────────────────────── 2. מלכודות ברמת השאלה ─────────────────────────────
 // states
-gqTrap('states',1,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבגז המולקולות "מתפרקות" לאטומים, אבל מולקולות האתאן נשארות שלמות – בגז רק המרחקים ביניהן גדולים והכוחות ביניהן זניחים.'});
-gqTrap('states',2,{0:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי הברום מתפרק לאטומי Br, אבל הקשר הקוולנטי Br–Br נשאר שלם; רק הכוחות בין המולקולות מתגברים: Br₂(l) → Br₂(g).', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שחימום "שובר את המולקולה", אבל אידוי משנה רק את מצב הצבירה – המולקולה Br₂ נשארת כפי שהיא.'});
-gqTrap('states',4,{0:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן "מתרחבות" או שבקירור הן מתכווצות, אבל גודל המולקולה אינו משתנה – משתנים המרחקים בין המולקולות.', 1:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שמעל טמפרטורת הרתיחה המולקולה מתפרקת לאטומים, אבל ברתיחה נחלשים רק הכוחות בין המולקולות; המולקולה נשארת שלמה.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ולא נעים כלל, אבל גם במוצק החלקיקים רועדים במקומם – הם רק אינם מחליפים מקום.'});
-gqTrap('states',5,{2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שהתנדפות היא "פירוק" של המולקולה, אבל התנדפות היא מעבר מצב צבירה בלבד – מולקולת האתאנול נשארת C₂H₅OH ועוברת למצב גז.', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שכאשר חומר "נעלם" הוא התפרק ליסודותיו, אבל האתאנול לא נעלם ולא התפרק – הוא עבר למצב גז כמולקולות שלמות.'});
-gqTrap('states',6,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שהאתאנול "מתפרק" כשהוא נעלם מהידיים, אבל הניסוח מראה את אותה מולקולה C₂H₅OH בשני הצדדים – זה אידוי, לא פירוק.'});
+gqTrap('states',1,{3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבגז המולקולות "מתפרקות" לאטומים, אבל מולקולות האתאן נשארות שלמות – בגז רק המרחקים ביניהן גדולים והכוחות ביניהן זניחים.'});
+gqTrap('states',2,{0:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבאידוי הברום מתפרק לאטומי Br, אבל הקשר הקוולנטי Br–Br נשאר שלם; רק הכוחות בין המולקולות מתגברים: Br₂(l) → Br₂(g).', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שחימום "שובר את המולקולה", אבל אידוי משנה רק את מצב הצבירה – המולקולה Br₂ נשארת כפי שהיא.'});
+gqTrap('states',4,{0:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן "מתרחבות" או שבקירור הן מתכווצות, אבל גודל המולקולה אינו משתנה – משתנים המרחקים בין המולקולות.', 1:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שמעל טמפרטורת הרתיחה המולקולה מתפרקת לאטומים, אבל ברתיחה נחלשים רק הכוחות בין המולקולות; המולקולה נשארת שלמה.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ולא נעים כלל, אבל גם במוצק החלקיקים מתנודדים במקומם – הם רק אינם מחליפים מקום.'});
+gqTrap('states',5,{2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שהתנדפות היא "פירוק" של המולקולה, אבל התנדפות היא מעבר מצב צבירה בלבד – מולקולת האתאנול נשארת C₂H₅OH ועוברת למצב גז.', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שכאשר חומר "נעלם" הוא התפרק ליסודותיו, אבל האתאנול לא נעלם ולא התפרק – הוא עבר למצב גז כמולקולות שלמות.'});
+gqTrap('states',6,{3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שהאתאנול "מתפרק" כשהוא נעלם מהידיים, אבל הניסוח מראה את אותה מולקולה C₂H₅OH בשני הצדדים – זה אידוי, לא פירוק.'});
 gqTrap('states',7,{1:'סימול חומר ↔ סימול חלקיק: רבים חושבים שהמסה במים והיתוך הם אותו דבר – "המלח הופך לנוזל", אבל (aq) מסמל יונים מומסים במים, ו-(l) מסמל נתך טהור בחימום. היתוך: KI(s) → K⁺(l) + I⁻(l).', 2:'סימול חומר ↔ סימול חלקיק: רבים חושבים שאם המלח "נוזלי" בכוס מים – זהו היתוך, אבל זהו תהליך המסה: יונים (aq) מוקפים במולקולות מים, בטמפרטורת החדר; היתוך דורש חימום ל-681°C ואינו כולל מים.'});
-gqTrap('states',8,{0:'סימול חומר ↔ סימול חלקיק: רבים מחליפים בין היתוך להמסה, אבל (aq) מסמל מומס במים ולא נוזל. בהיתוך של חומר יוני מתקבל נתך של יונים ניידים המסומנים (l), ללא מים.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבחימום התרכובת "מתפרקת" ליסודותיה, אבל היתוך הוא מעבר מצב צבירה בלבד – בנתך נמצאים אותם יונים, Mg²⁺ ו-I⁻, שהיו במוצק; לא נוצרים היסודות מגנזיום ויוד.'});
+gqTrap('states',8,{0:'סימול חומר ↔ סימול חלקיק: רבים מחליפים בין היתוך להמסה, אבל (aq) מסמל מומס במים ולא נוזל. בהיתוך של חומר יוני מתקבל נתך של יונים ניידים המסומנים (l), ללא מים.', 2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבחימום התרכובת "מתפרקת" ליסודותיה, אבל היתוך הוא מעבר מצב צבירה בלבד – בנתך נמצאים אותם יונים, Mg²⁺ ו-I⁻, שהיו במוצק; לא נוצרים היסודות מגנזיום ויוד.'});
 gqTrap('states',10,{1:'סימול חומר ↔ סימול חלקיק: רבים חושבים ש-(aq) פירושו "נוזל", אבל (aq) אינו מצב צבירה כלל – הוא מסמל חומר מומס במים. נוזל טהור מסומן (l).'});
-gqTrap('states',13,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שכשקרח ניתך "משהו קורה למולקולות", אבל בהיתוך המולקולות H₂O נשארות שלמות – רק הסדר והמרחקים ביניהן משתנים. פירוק למימן וחמצן הוא תגובה כימית אחרת לגמרי.'});
-gqTrap('states',15,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שגז "קל יותר" ולכן המסה קטנה, אבל אותן מולקולות באותו מספר – אותה מסה. הגז פחות צפוף כי המרחקים גדולים, לא כי המולקולות קלות יותר.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי מים מתפרקים למימן וחמצן, אבל באדים יש מולקולות H₂O שלמות – נחלשו רק הכוחות ביניהן.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שאם הנפח גדל – יש יותר מולקולות, אבל מספר המולקולות לא השתנה; הן פשוט התרחקו זו מזו.'});
-gqTrap('states',18,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שהמולקולות עצמן משתנות בגודלן במעבר מצב, אבל המולקולה אינה משתנה – המרחקים בין המולקולות הם שגדלים.', 2:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שחלק מהמולקולות "נעלמות" באידוי, אבל מספר המולקולות נשמר – הן רק עוברות למצב גז ומתפזרות.', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שברתיחה המולקולות מתפרקות לאטומים, אבל הקשרים הקוולנטיים O–H חזקים ונשארים; רק הכוחות בין המולקולות נחלשים.'});
-gqTrap('states',19,{0:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שברתיחה נשברים הקשרים O–H שבתוך המולקולה, אבל אלה קשרים חזקים שאינם נשברים ברתיחה; מה שמתגברים עליו הוא הכוחות בין המולקולות.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים ש"נשבר הכול", אבל אם היו נשברים גם הקשרים הקוולנטיים – לא היו אדי מים אלא מימן וחמצן. באדים יש מולקולות H₂O שלמות.'});
+gqTrap('states',13,{3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שכשקרח ניתך "משהו קורה למולקולות", אבל בהיתוך המולקולות H₂O נשארות שלמות – רק הסדר והמרחקים ביניהן משתנים. פירוק למימן וחמצן הוא תגובה כימית אחרת לגמרי.'});
+gqTrap('states',15,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שגז "קל יותר" ולכן המסה קטנה, אבל אותן מולקולות באותו מספר – אותה מסה. הגז פחות צפוף כי המרחקים גדולים, לא כי המולקולות קלות יותר.', 2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבאידוי מים מתפרקים למימן וחמצן, אבל באדים יש מולקולות H₂O שלמות – נחלשו רק הכוחות ביניהן.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שאם הנפח גדל – יש יותר מולקולות, אבל מספר המולקולות לא השתנה; הן פשוט התרחקו זו מזו.'});
+gqTrap('states',18,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שהמולקולות עצמן משתנות בגודלן במעבר מצב צבירה, אבל המולקולה אינה משתנה – המרחקים בין המולקולות הם שגדלים.', 2:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שחלק מהמולקולות "נעלמות" באידוי, אבל מספר המולקולות נשמר – הן רק עוברות למצב גז ומתפזרות.', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שברתיחה המולקולות מתפרקות לאטומים, אבל הקשרים הקוולנטיים O–H חזקים ונשארים; רק הכוחות בין המולקולות נחלשים.'});
+gqTrap('states',19,{0:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שברתיחה נשברים הקשרים O–H שבתוך המולקולה, אבל אלה קשרים חזקים שאינם נשברים ברתיחה; מה שמתגברים עליו הוא הכוחות בין המולקולות.', 2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים ש"נשבר הכול", אבל אם היו נשברים גם הקשרים הקוולנטיים – לא היו אדי מים אלא מימן וחמצן. באדים יש מולקולות H₂O שלמות.'});
 gqTrap('states',22,{1:'סימול חומר ↔ סימול חלקיק: רבים חושבים ש-(l) ו-(aq) שניהם פירושם "מלח בתוך נוזל", אבל (l) הוא מלח נוזלי טהור (נתך, מעל 801°C) ו-(aq) הוא מלח מומס במים בטמפרטורת החדר.', 2:'סימול חומר ↔ סימול חלקיק: רבים מחליפים בין הסימולים, אבל (l) = liquid, נוזל טהור; (aq) = aqueous, מומס במים.'});
 
 // materials
 gqTrap('materials',2,{3:'המסה = שינוי כימי: רבים חושבים שתמיסה אחידה ושקופה היא חומר טהור, אבל תמיסה היא תערובת הומוגנית – שני סוגי מולקולות (מומס וממס) מפוזרים זה בזה.'});
 gqTrap('materials',3,{3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שהבדל ברמת החלקיקים אינו נראה לעין, אבל פיזור אחיד נראה כנוזל אחיד, ופיזור לא אחיד נראה כשתי שכבות – זו בדיוק התצפית המאקרוסקופית.'});
 gqTrap('materials',4,{0:'תערובת ↔ תרכובת: רבים חושבים שאוויר הוא תרכובת של חנקן וחמצן, אבל מולקולות N₂ ו-O₂ אינן קשורות זו לזו והיחס ביניהן יכול להשתנות – זו תערובת. לאוויר אין נוסחה כימית.'});
-gqTrap('materials',5,{1:'תערובת ↔ תרכובת: רבים חושבים שכל גז "פשוט" הוא יסוד, אבל H₂O היא תרכובת – בכל מולקולה אטומי מימן וחמצן קשורים. N₂ ו-O₂ הם יסודות, H₂O אינה.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שגזים "מתפרקים לאטומים" באוויר, אבל N₂, O₂ ו-H₂O הם מולקולות יציבות שאינן מתפרקות מעצמן.'});
+gqTrap('materials',5,{1:'תערובת ↔ תרכובת: רבים חושבים שכל גז "פשוט" הוא יסוד, אבל H₂O היא תרכובת – בכל מולקולה אטומי מימן וחמצן קשורים. N₂ ו-O₂ הם יסודות, H₂O אינה.', 2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שגזים "מתפרקים לאטומים" באוויר, אבל N₂, O₂ ו-H₂O הם מולקולות יציבות שאינן מתפרקות מעצמן.'});
 gqTrap('materials',6,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים מתארים "מעבר אלקטרונים" כתצפית, אבל אלקטרונים אינם נראים – זהו הסבר מיקרוסקופי. תצפית מאקרוסקופית היא מה שרואים: שינוי צבע, פליטת גז.'});
 gqTrap('materials',8,{2:'תערובת ↔ תרכובת: רבים חושבים שאם יש שני סוגי אטומים – זו תערובת של שני יסודות, אבל כאן האטומים השונים קשורים זה לזה בתוך כל חלקיק וכל החלקיקים זהים – זו תרכובת.'});
 gqTrap('materials',9,{1:'תערובת ↔ תרכובת: רבים חושבים שכמה סוגי אטומים בכלי אחד = תרכובת, אבל בתרכובת האטומים השונים קשורים בתוך אותו חלקיק. כאן הם בחלקיקים נפרדים ולא קשורים – תערובת.'});
@@ -9813,28 +9828,28 @@ DIAG['a'] = {
      whyTraps:{0:'חלקיק אחד = החומר: המולקולה אינה "מנה" של החומר – תכונות החומר נובעות מהאינטראקציות בין חלקיקים רבים.', 3:'בלבול בין מאקרו, מיקרו וסמל: "מוצק" הוא מצב צבירה של חומר, לא תכונה של אטום או מולקולה בודדים.'},
      explain:'מצב צבירה, צבע, מוליכות וטעם הם תכונות מאקרוסקופיות – של צבר ענק של חלקיקים. הן נובעות מהמרחקים, הסדר והכוחות שבין החלקיקים. למולקולת H₂O אחת יש מבנה (שני אטומי H קשורים לאטום O) אך אין לה מצב צבירה ואין לה צבע. מים אינם תערובת: אטומי המימן והחמצן קשורים זה לזה בתוך כל מולקולה ביחס קבוע 2:1 – תרכובת.'},
 
-    {id:2, topic:'states', trap:'במעבר מצב נשברים קשרים קוולנטיים',
+    {id:2, topic:'states', trap:'במעבר מצב צבירה נשברים קשרים קוולנטיים',
      text:'ברום, Br₂(l), הוא נוזל חום-אדום הרותח ב-59°C. מחממים ברום בכלי סגור מעל טמפרטורת הרתיחה. מה נמצא בכלי?',
      options:['מולקולות Br₂ במצב גז','אטומי ברום בודדים, Br, במצב גז','יוני Br⁻ במצב גז','מולקולות Br₂ קטנות יותר מאשר בנוזל'],
      correct:0,
-     traps:{1:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי המולקולה מתפרקת לאטומים, אבל הקשר הקוולנטי Br–Br חזק ונשאר שלם; מתגברים רק על הכוחות בין המולקולות: Br₂(l) → Br₂(g).', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שהמולקולות עצמן משתנות בגודלן במעבר מצב, אבל המולקולה אינה משתנה – רק המרחקים בין המולקולות גדלים.'},
+     traps:{1:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבאידוי המולקולה מתפרקת לאטומים, אבל הקשר הקוולנטי Br–Br חזק ונשאר שלם; מתגברים רק על הכוחות בין המולקולות: Br₂(l) → Br₂(g).', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שהמולקולות עצמן משתנות בגודלן במעבר מצב צבירה, אבל המולקולה אינה משתנה – רק המרחקים בין המולקולות גדלים.'},
      whyText:'למה?',
      why:['החום שובר את הקשר בין שני אטומי הברום, ולכן בגז יש אטומים','באידוי מתגברים רק על הכוחות שבין המולקולות; הקשר הקוולנטי בתוך המולקולה חזק בהרבה ונשאר','בגז החלקיקים חייבים להיות קטנים ככל האפשר, ולכן המולקולות מתפרקות','ברום הוא חומר יוני, ולכן בחימום נוצרים יונים'],
      whyCorrect:1,
-     whyTraps:{0:'במעבר מצב נשברים קשרים קוולנטיים: 59°C רחוקים מאוד מהאנרגיה הדרושה לשבירת קשר קוולנטי; האנרגיה הזו מספיקה רק להתגבר על הכוחות החלשים שבין המולקולות.', 2:'בלבול בין מאקרו, מיקרו וסמל: גודל החלקיק אינו קובע את מצב הצבירה – המרחקים בין החלקיקים והכוחות ביניהם קובעים.'},
+     whyTraps:{0:'במעבר מצב צבירה נשברים קשרים קוולנטיים: 59°C רחוקים מאוד מהאנרגיה הדרושה לשבירת קשר קוולנטי; האנרגיה הזו מספיקה רק להתגבר על הכוחות החלשים שבין המולקולות.', 2:'בלבול בין מאקרו, מיקרו וסמל: גודל החלקיק אינו קובע את מצב הצבירה – המרחקים בין החלקיקים והכוחות ביניהם קובעים.'},
      explain:'אידוי הוא מעבר מצב צבירה: Br₂(l) → Br₂(g). האנרגיה שנקלטת בחימום משמשת להתגבר על הכוחות החלשים שבין המולקולות, לא לשבירת הקשר הקוולנטי Br–Br שבתוך המולקולה, שהוא חזק בהרבה. לכן בגז יש מולקולות Br₂ שלמות, זהות לאלה שבנוזל, רק במרחקים גדולים ובתנועה חופשית. ברום הוא חומר מולקולרי ואין בו יונים.',
      src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 7 סעיף א (מותאם)'},
 
     {id:3, topic:'states', trap:'בלבול בין מאקרו, מיקרו וסמל',
      text:'טמפרטורת ההיתוך של אתילן גליקול היא −13°C. בכלי אחד נמצא אתילן גליקול ב-−25°C ובכלי שני ב-25°C. מהו ההבדל הנכון ברמה המיקרוסקופית?',
-     options:['ב-−25°C המולקולות אינן נעות כלל, וב-25°C הן נעות','ב-−25°C המולקולות קטנות וצפופות יותר, וב-25°C הן מתרחבות','ב-−25°C המולקולות מסודרות ורועדות במקומן; ב-25°C הסדר נפגע והן נעות זו ביחס לזו','ב-−25°C המולקולות קפואות, וב-25°C הן מתפרקות לאטומים'],
+     options:['ב-−25°C המולקולות אינן נעות כלל, וב-25°C הן נעות','ב-−25°C המולקולות קטנות וצפופות יותר, וב-25°C הן מתרחבות','ב-−25°C המולקולות מסודרות ומתנודדות במקומן; ב-25°C הסדר נפגע והן נעות זו ביחס לזו','ב-−25°C המולקולות קפואות, וב-25°C הן מתפרקות לאטומים'],
      correct:2,
-     traps:{0:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ללא תנועה, אבל גם במוצק המולקולות רועדות במקומן – הן רק אינן מחליפות מקום.', 1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן מתרחבות, אבל גודל המולקולה קבוע – משתנים המרחקים והסדר בין המולקולות.', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבהיתוך או בחימום המולקולות מתפרקות, אבל זהות המולקולות נשמרת במעבר מצב צבירה – רק הסדר והתנועה משתנים.'},
+     traps:{0:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ללא תנועה, אבל גם במוצק המולקולות מתנודדות במקומן – הן רק אינן מחליפות מקום.', 1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן מתרחבות, אבל גודל המולקולה קבוע – משתנים המרחקים והסדר בין המולקולות.', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שבהיתוך או בחימום המולקולות מתפרקות, אבל זהות המולקולות נשמרת במעבר מצב צבירה – רק הסדר והתנועה משתנים.'},
      whyText:'מהי הסיבה לכך?',
      why:['במעבר ממוצק לנוזל משתנים הסדר, המרחקים ואנרגיית התנועה של המולקולות – לא המולקולות עצמן','בטמפרטורה נמוכה האנרגיה אפסית ולכן אין שום תנועה','חימום מגדיל את המולקולות כמו שהוא מגדיל פס מתכת','בהיתוך נשברים הקשרים בתוך המולקולה והיא נפתחת'],
      whyCorrect:0,
-     whyTraps:{1:'בלבול בין מאקרו, מיקרו וסמל: גם ב-−25°C יש למולקולות אנרגיית תנועה – הן רועדות במקומן. "קפוא" ברמה המאקרו אינו "דומם" ברמת החלקיקים.', 2:'בלבול בין מאקרו, מיקרו וסמל: התרחבות פס מתכת היא תופעה מאקרוסקופית הנובעת מגידול המרחקים בין החלקיקים, לא מגידול החלקיקים עצמם.', 3:'במעבר מצב נשברים קשרים קוולנטיים: בהיתוך מתגברים על הכוחות בין המולקולות בלבד; הקשרים הקוולנטיים נשארים.'},
-     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: המולקולות צפופות, מסודרות במבנה קבוע ורועדות במקומן. ב-25°C החומר נוזל: המולקולות עדיין קרובות, אך הסדר נפגע והן נעות וזורמות זו ביחס לזו. המולקולות עצמן – גודלן, מסתן וזהותן – אינן משתנות במעבר מצב צבירה. "המולקולות מתרחבות" או "המולקולות קפואות" הם ייחוס של תכונות מאקרוסקופיות לחלקיק יחיד.',
+     whyTraps:{1:'בלבול בין מאקרו, מיקרו וסמל: גם ב-−25°C יש למולקולות אנרגיית תנועה – הן מתנודדות במקומן. "קפוא" ברמה המאקרו אינו "דומם" ברמת החלקיקים.', 2:'בלבול בין מאקרו, מיקרו וסמל: התרחבות פס מתכת היא תופעה מאקרוסקופית הנובעת מגידול המרחקים בין החלקיקים, לא מגידול החלקיקים עצמם.', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: בהיתוך מתגברים על הכוחות בין המולקולות בלבד; הקשרים הקוולנטיים נשארים.'},
+     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: המולקולות צפופות, מסודרות במבנה קבוע ומתנודדות במקומן. ב-25°C החומר נוזל: המולקולות עדיין קרובות, אך הסדר נפגע והן נעות וזורמות זו ביחס לזו. המולקולות עצמן – גודלן, מסתן וזהותן – אינן משתנות במעבר מצב צבירה. "המולקולות מתרחבות" או "המולקולות קפואות" הם ייחוס של תכונות מאקרוסקופיות לחלקיק יחיד.',
      src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 11 סעיף ד (מותאם לרב-ברירה)'},
 
     {id:4, topic:'materials', trap:'תערובת ↔ תרכובת',
@@ -9845,14 +9860,14 @@ DIAG['a'] = {
      whyText:'מהי הסיבה לכך?',
      why:['במים יש שני יסודות, ושני יסודות ביחד הם תמיד תערובת','בכל מולקולת מים אטומי H ו-O קשורים זה לזה ביחס קבוע 2:1, ואי אפשר להפרידם בסינון, זיקוק או אידוי','מים הם חומר טהור, וכל חומר טהור הוא יסוד','אפשר להפריד מים למימן ולחמצן בחימום פשוט, כמו שמפרידים תערובת'],
      whyCorrect:1,
-     whyTraps:{0:'תערובת ↔ תרכובת: שני יסודות קשורים זה לזה בחלקיק אחד הם תרכובת; רק כאשר חלקיקיהם נפרדים זה לצד זה – תערובת.', 3:'במעבר מצב נשברים קשרים קוולנטיים: חימום מים גורם לרתיחה – H₂O(g) – ולא לפירוק. פירוק מים ליסודות דורש תגובה כימית (זרם חשמלי).'},
+     whyTraps:{0:'תערובת ↔ תרכובת: שני יסודות קשורים זה לזה בחלקיק אחד הם תרכובת; רק כאשר חלקיקיהם נפרדים זה לצד זה – תערובת.', 3:'במעבר מצב צבירה נשברים קשרים קוולנטיים: חימום מים גורם לרתיחה – H₂O(g) – ולא לפירוק. פירוק מים ליסודות דורש תגובה כימית (זרם חשמלי).'},
      explain:'מים הם תרכובת: חומר טהור שבכל אחד מחלקיקיו (מולקולות H₂O) אטומים משני סוגים – מימן וחמצן – קשורים זה לזה ביחס קבוע. לתרכובת תכונות משלה, שונות לחלוטין מתכונות היסודות שמרכיבים אותה (מימן וחמצן הם גזים דליקים; מים נוזל שמכבה אש). בתערובת, לעומת זאת, חלקיקי החומרים השונים נמצאים זה לצד זה, אינם קשורים, היחס ביניהם משתנה, וכל חומר שומר על תכונותיו. יסוד הוא חומר טהור מסוג אטומים אחד בלבד.'},
 
     {id:5, topic:'materials', trap:'המסה = שינוי כימי',
      text:'לכלי המכיל חומר מולקולרי A הוסיפו מים וערבבו. התקבל נוזל שקוף ואחיד. מה קרה ברמה המיקרוסקופית?',
      options:['מולקולות A נקשרו למולקולות המים בקשרים קוולנטיים ונוצר חומר חדש','מולקולות A מפוזרות באופן אחיד בין מולקולות המים, ללא שינוי בזהותן','מולקולות A התפרקו לאטומים שהתפזרו במים','מולקולות A נעלמו – הפכו למים'],
      correct:1,
-     traps:{0:'המסה = שינוי כימי: רבים חושבים שבהמסה נוצר חומר חדש, אבל המסה היא תהליך פיזיקלי – המולקולות שומרות על זהותן, ואפשר לקבל את A בחזרה באידוי המים.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שחומר "נפרד לחלקים" כשהוא מתמוסס, אבל המולקולות נשארות שלמות – הן רק מתרחקות זו מזו ומתפזרות בין מולקולות המים.', 3:'המסה = שינוי כימי: רבים חושבים שהמומס "נעלם", אבל הוא עדיין שם – כמולקולות בודדות המפוזרות בין מולקולות המים. מסת התמיסה שווה לסכום המסות.'},
+     traps:{0:'המסה = שינוי כימי: רבים חושבים שבהמסה נוצר חומר חדש, אבל המסה היא תהליך פיזיקלי – המולקולות שומרות על זהותן, ואפשר לקבל את A בחזרה באידוי המים.', 2:'במעבר מצב צבירה נשברים קשרים קוולנטיים: רבים חושבים שחומר "נפרד לחלקים" כשהוא מתמוסס, אבל המולקולות נשארות שלמות – הן רק מתרחקות זו מזו ומתפזרות בין מולקולות המים.', 3:'המסה = שינוי כימי: רבים חושבים שהמומס "נעלם", אבל הוא עדיין שם – כמולקולות בודדות המפוזרות בין מולקולות המים. מסת התמיסה שווה לסכום המסות.'},
      whyText:'איך אפשר לדעת?',
      why:['המסה היא תערובת הומוגנית: החומר נראה "נעלם" כי החלקיקים קטנים ומפוזרים, אך הוא ניתן להפרדה חזרה באידוי המים','הנוזל שקוף, וכל נוזל שקוף הוא חומר טהור אחד','כשחומר נעלם מהעין הוא התפרק או הגיב','המים "אוכלים" את החומר – זו תגובה כימית כמו שריפה'],
      whyCorrect:0,
@@ -10842,8 +10857,8 @@ GQ_BANKS['hess'] = {
      options:['−99 kJ','+99 kJ','+198 kJ','−198 kJ'],correct:[1],
      explain:'התגובה המבוקשת היא היפוך התגובה הנתונה (שינוי סימן: +198 kJ) וחלוקה ב-2 (כל המקדמים חולקו ב-2): +198 ÷ 2 = +99 kJ. −99 – שכחו להפוך את הסימן; +198 – שכחו לחלק ב-2.'},
     {id:17,difficulty:'easy',
-     text:'לפניכם תיאור של דיאגרמת רמות אנתלפיה. מהו ΔH⁰ של התגובה CO₂(g) → CO(g) + ½O₂(g)?',
-     fig:'<div class="cf">רמה עליונה: C(s) + O₂(g)<br>רמה אמצעית: CO(g) + ½O₂(g) – נמוכה מהרמה העליונה ב-110.5 kJ<br>רמה תחתונה: CO₂(g) – נמוכה מהרמה העליונה ב-393.5 kJ</div>',
+     text:'לפניכם דיאגרמת רמות אנתלפיה. מהו ΔH⁰ של התגובה CO₂(g) → CO(g) + ½O₂(g)?',
+     fig:'<svg width="270" height="220" viewBox="0 0 270 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="דיאגרמת אנתלפיה" style="font-family:Arial,Helvetica,sans-serif;direction:ltr"><line x1="14" y1="216" x2="14" y2="10" stroke="#475569" stroke-width="1.5"/><polygon points="14,4 10,12 18,12" fill="#475569"/><text x="22" y="13" font-size="11" font-style="italic" fill="#475569">H</text><line x1="30" y1="40.6" x2="262" y2="40.6" stroke="#111" stroke-width="2"/><text x="95.0" y="35.6" font-size="11.5" text-anchor="middle" fill="#111">C(s) + O₂(g)</text><line x1="30" y1="95.2" x2="262" y2="95.2" stroke="#111" stroke-width="2"/><text x="95.0" y="90.2" font-size="11.5" text-anchor="middle" fill="#111">CO(g) + ½O₂(g)</text><line x1="30" y1="200.7" x2="262" y2="200.7" stroke="#111" stroke-width="2"/><text x="95.0" y="195.7" font-size="11.5" text-anchor="middle" fill="#111">CO₂(g)</text><line x1="205" y1="42.6" x2="205" y2="93.2" stroke="#dc2626" stroke-width="2"/><polygon points="205,93.2 200,84.2 210,84.2" fill="#dc2626"/><text x="198" y="71.9" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">−110.5 kJ</text><line x1="245" y1="42.6" x2="245" y2="198.7" stroke="#dc2626" stroke-width="2"/><polygon points="245,198.7 240,189.7 250,189.7" fill="#dc2626"/><text x="238" y="159.9" font-size="11.5" font-weight="700" text-anchor="end" fill="#b91c1c">−393.5 kJ</text></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">הדיאגרמה אינה בקנה מידה</div>',
      options:['+283.0 kJ','−283.0 kJ','+504.0 kJ','+393.5 kJ'],correct:[0],
      explain:'ההפרש בין הרמה התחתונה (CO₂) לרמה האמצעית (CO + ½O₂) הוא 393.5 − 110.5 = 283.0 kJ. מעבר מהרמה התחתונה לגבוהה יותר – עלייה באנתלפיה, ΔH⁰ = +283.0 kJ. −283.0 הוא ΔH⁰ של התגובה ההפוכה (שרפת CO); 504.0 מתקבל מחיבור ההפרשים במקום חיסור.'},
     {id:18,difficulty:'medium',
