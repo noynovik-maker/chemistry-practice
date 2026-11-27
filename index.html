@@ -829,6 +829,9 @@ header p::before{content:'⚗';font-size:14px;opacity:.6;}
 .gq-fig svg{max-width:100%;height:auto;}
 .gq-fig .cf{font-family:'Space Mono',monospace;font-size:clamp(15px,4vw,20px);color:#111;letter-spacing:.5px;line-height:1.7;}
 .gq-fig .cf sub{font-size:.7em;}
+.ovr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 6px;position:relative;top:-.35em;}
+.ovr small{font-size:.62em;line-height:1.1;min-height:1.1em;}
+.ovr-a{display:block;transform:scaleX(1.9);line-height:.8;}
 .gq-leg{background:var(--panel2);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0;direction:rtl;text-align:right;}
 .gq-leg-title{font-size:13px;font-weight:900;color:var(--text);margin-bottom:10px;}
 .gq-leg table{width:100%;border-collapse:collapse;font-size:12.5px;}
@@ -5391,6 +5394,16 @@ function gqToggleLegend(){
   document.getElementById('gqLegendToggle').classList.toggle('open');
   document.getElementById('gqLegendCollapse').classList.toggle('open');
 }
+// סדר הצגת התשובות: מעורבב, אלא אם ההסבר/המלכודות/התשובות מפנים לאות של תשובה (א–ד) או ל"כל התשובות"
+function gqOptOrder(q){
+  const ident=q.options.map((_,i)=>i);
+  if(q.noShuffle||q.options.length<3) return ident;
+  const LET=/(^|[\s(,;:'"])(?:[ולבמהשכ]-?)?[אבגדה]['׳]?(?=$|[\s,;:.)–\-])/;
+  const WORDS=/התשובות|תשובה [אבגדה]|היגדים|ההיגד|אפשרות [אבגדה]|סעיף/;
+  const txt=[q.explain||'',...Object.values(q.traps||{}),...q.options].join(' \n ').replace(/<[^>]+>/g,' ');
+  if(LET.test(txt)||WORDS.test(txt)) return ident;
+  return shuffle(ident);
+}
 function gqRender(){
   const q=gqQs[gqCur], total=gqQs.length;
   document.getElementById('gqProgress').style.width=(gqCur/total*100)+'%';
@@ -5409,9 +5422,10 @@ function gqRender(){
   document.getElementById('gqMultiHint').style.display=q.multi?'flex':'none';
   const c=document.getElementById('gqOptions');c.innerHTML='';
   const L=['א','ב','ג','ד','ה'];
-  q.options.forEach((o,i)=>{
+  gqOptOrder(q).forEach((i,n)=>{
+    const o=q.options[i];
     const d=document.createElement('div');d.className='opt';d.dataset.idx=i;
-    d.innerHTML=`<span class="opt-letter">${L[i]}</span><span>${o}</span>`;
+    d.innerHTML=`<span class="opt-letter">${L[n]}</span><span>${o}</span>`;
     d.onclick=()=>gqToggle(d,q);c.appendChild(d);
   });
   document.getElementById('gqFeedback').className='feedback';
@@ -6445,6 +6459,7 @@ GQ_BANKS['hbond'] = {
      explain:'בשתי התרכובות יש קשרי מימן וון-דר-ולס (ג שגוי). בגליצרול שלוש קבוצות O–H לעומת אחת ב-2-פרופאנול – כל מולקולה יוצרת קשרי מימן רבים יותר, ובנוסף 50 אלקטרונים לעומת 34 – ון-דר-ולס חזקות יותר. שני הגורמים פועלים לאותו כיוון: גליצרול רותח ב-290°C.'},
     {id:18,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף ב ii (מותאם לרב-ברירה)',
      text:'חומר A: טמפרטורת רתיחה 157°C. חומר B: טמפרטורת רתיחה 78°C. איור 1 מתאר מולקולות קצרות של כוהל (שני אטומי פחמן וקבוצת OH), ואיור 2 מתאר מולקולות כוהל עם שרשרת פחמנית ארוכה. באיזה איור מתואר חומר A, ומדוע?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 1: מולקולות כוהל קצרות"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="22.8" cy="21.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="32.8" cy="30.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="46.0" cy="27.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="93.7" cy="19.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="107.1" cy="19.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="115.5" cy="9.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="160.8" cy="29.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="159.3" cy="42.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="169.0" cy="51.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="29.0" cy="67.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="42.3" cy="68.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="51.5" cy="59.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="93.7" cy="65.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="100.1" cy="77.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="113.4" cy="79.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="148.1" cy="89.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="161.1" cy="86.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="166.5" cy="74.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="28.3" cy="109.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="39.7" cy="116.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="52.2" cy="111.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="95.5" cy="113.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="108.3" cy="116.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="119.1" cy="108.9" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 1</div></div><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 2: מולקולות כוהל בעלות שרשרת ארוכה"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="14.3" cy="17.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="25.6" cy="24.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="38.2" cy="19.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="49.5" cy="26.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="62.1" cy="22.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="73.4" cy="29.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="85.9" cy="24.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="103.6" cy="37.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="116.3" cy="41.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="127.3" cy="33.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="140.1" cy="38.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="151.1" cy="30.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="163.8" cy="34.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="174.9" cy="27.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="11.8" cy="61.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="24.2" cy="66.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="35.7" cy="59.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="48.1" cy="64.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="59.7" cy="57.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="72.1" cy="62.8" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="83.6" cy="56.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="106.4" cy="77.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="117.5" cy="84.4" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="130.2" cy="79.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="141.4" cy="87.4" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="154.0" cy="82.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="165.2" cy="90.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="177.8" cy="85.8" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="14.3" cy="97.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="25.7" cy="104.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="38.2" cy="99.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="49.6" cy="106.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="62.1" cy="101.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="73.5" cy="108.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="86.0" cy="103.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="101.7" cy="121.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="114.2" cy="125.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="125.6" cy="118.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="138.1" cy="123.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="149.4" cy="116.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="162.0" cy="120.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="173.3" cy="113.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 2</div></div><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">מקרא: <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#64748b;vertical-align:middle;margin:0 3px"></span>אטום פחמן (עם אטומי המימן הקשורים אליו) &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ef4444;vertical-align:middle;margin:0 3px"></span>קבוצת OH</div></div>',
      options:['איור 1, כי במולקולות הקצרות יש יותר מוקדים ליצירת קשרי מימן.','איור 2, כי למולקולות הארוכות ענן אלקטרונים גדול יותר ולכן אינטראקציות ון-דר-ולס חזקות יותר, נוסף על קשרי המימן.','איור 1, כי מולקולות קצרות יוצרות קשרי מימן חזקים יותר.','איור 2, כי רק בין מולקולות ארוכות נוצרים קשרי מימן.'],correct:[1],
      explain:'בשני הכהלים קבוצת OH אחת – אותם קשרי מימן (א, ג, ד שגויים). ככל שהשרשרת הפחמנית ארוכה יותר, ענן האלקטרונים גדול יותר, ון-דר-ולס חזקות יותר וטמפרטורת הרתיחה גבוהה יותר. לכן A (157°C) הוא הכוהל הארוך – איור 2, ו-B (78°C) הוא אתאנול.'},
     {id:19,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף ג iii (מותאם לרב-ברירה)',
@@ -6981,10 +6996,12 @@ GQ_BANKS['materials'] = {
     // ── מבוסס בגרויות ──
     {id:2,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף ג (מותאם לרב-ברירה)',
      text:'לכלי שבו חומר A ולכלי שבו חומר B (שני חומרים מולקולריים) הוסיפו נפח זהה של מים וערבבו. באיור 3: מולקולות A קטנות מפוזרות באופן אחיד בין מולקולות המים. באיור 4: מולקולות B ארוכות מרוכזות בשכבה נפרדת מעל המים. באיזה מן האיורים מתוארת תמיסה, ומדוע?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="160" height="170" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 3: מולקולות A מפוזרות באופן אחיד בין מולקולות המים"><rect x="21" y="48" width="118" height="111" fill="#e0f2fe"/><path d="M20 12 V150 Q20 160 30 160 H130 Q140 160 140 150 V12" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><circle cx="29.1" cy="56.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="45.1" cy="55.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.8" cy="57.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.7" cy="58.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="84.9" cy="57.7" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="99.3" cy="56.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.4" cy="59.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="128.2" cy="56.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="30.6" cy="75.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="44.7" cy="72.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="61.0" cy="70.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.7" cy="71.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="85.4" cy="71.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="100.5" cy="74.6" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="114.2" cy="73.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="130.8" cy="72.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="30.2" cy="85.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.1" cy="86.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="59.5" cy="87.6" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="72.0" cy="88.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.0" cy="87.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="103.0" cy="89.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="114.5" cy="88.4" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="130.2" cy="89.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="31.1" cy="101.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="46.7" cy="101.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.2" cy="104.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="71.2" cy="102.9" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="84.9" cy="103.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="102.8" cy="103.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="117.7" cy="102.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.1" cy="103.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="30.4" cy="117.8" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="46.0" cy="120.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.5" cy="118.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.7" cy="119.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.9" cy="120.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="103.1" cy="116.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.2" cy="118.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="127.7" cy="117.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="28.3" cy="131.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.1" cy="134.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="56.7" cy="131.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="72.4" cy="134.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="85.1" cy="132.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="101.7" cy="134.9" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="117.4" cy="134.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="129.0" cy="132.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.3" cy="149.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="46.6" cy="146.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="57.0" cy="146.7" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="71.6" cy="147.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.6" cy="146.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="99.0" cy="147.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.1" cy="148.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="132.4" cy="149.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 3</div></div><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="160" height="170" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 4: מולקולות B ארוכות בשכבה נפרדת מעל המים"><rect x="21" y="48" width="118" height="52" fill="#dcfce7"/><rect x="21" y="100" width="118" height="59" fill="#e0f2fe"/><path d="M20 12 V150 Q20 160 30 160 H130 Q140 160 140 150 V12" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><circle cx="30.1" cy="108.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="45.2" cy="106.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="60.6" cy="109.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.8" cy="109.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="86.7" cy="107.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="99.5" cy="108.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="113.6" cy="106.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="128.6" cy="106.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.2" cy="120.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="41.8" cy="120.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="56.6" cy="121.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.5" cy="123.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.8" cy="120.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="100.3" cy="121.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.1" cy="120.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.8" cy="124.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.8" cy="135.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.2" cy="134.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="57.8" cy="135.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.5" cy="134.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="84.8" cy="137.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="101.6" cy="134.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="116.0" cy="134.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="130.2" cy="137.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="31.8" cy="150.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="43.1" cy="149.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="56.9" cy="151.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="73.1" cy="151.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="86.3" cy="148.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="103.1" cy="151.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="117.6" cy="151.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.7" cy="151.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="28.0" cy="58.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="36.9" cy="63.3" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="45.8" cy="60.5" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="54.7" cy="65.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="63.6" cy="63.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="84.0" cy="56.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="93.0" cy="59.1" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="101.9" cy="54.1" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="110.9" cy="57.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="119.8" cy="52.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="30.0" cy="76.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="39.0" cy="79.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="47.9" cy="74.4" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="56.9" cy="77.6" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="65.9" cy="72.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="86.0" cy="78.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="95.0" cy="82.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="103.9" cy="79.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="112.9" cy="84.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="121.8" cy="81.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="56.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="65.0" cy="96.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="74.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="83.0" cy="96.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="92.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 4</div></div><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">מקרא: <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#38bdf8;vertical-align:middle;margin:0 3px"></span>מולקולת מים &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#f59e0b;vertical-align:middle;margin:0 3px"></span>מולקולת A &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span>מולקולת B</div></div>',
      options:['איור 3 – חלקיקי שני החומרים מפוזרים באופן אחיד בכל הנפח (תערובת הומוגנית)','איור 4 – יש בו שני אזורים נפרדים, כפי שנדרש בתמיסה','בשני האיורים – בשניהם יש מים','באף אחד מהם – תמיסה היא חומר טהור'],correct:[0],
      explain:'תמיסה היא תערובת הומוגנית: חלקיקי המומס מפוזרים באופן אחיד בין חלקיקי הממס – כמו באיור 3. באיור 4 יש שתי שכבות נפרדות – תערובת הטרוגנית. תמיסה אינה חומר טהור אלא תערובת.'},
     {id:3,difficulty:'easy',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף ג (מותאם לרב-ברירה)',
      text:'באיור 3 מתוארת תערובת של חומר A עם מים (המולקולות מפוזרות באופן אחיד), ובאיור 4 תערובת של חומר B עם מים (המולקולות מרוכזות בשכבה נפרדת מעל המים). מהו ההבדל המאקרוסקופי בין שתי התערובות?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="160" height="170" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 3: מולקולות A מפוזרות באופן אחיד בין מולקולות המים"><rect x="21" y="48" width="118" height="111" fill="#e0f2fe"/><path d="M20 12 V150 Q20 160 30 160 H130 Q140 160 140 150 V12" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><circle cx="29.1" cy="56.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="45.1" cy="55.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.8" cy="57.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.7" cy="58.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="84.9" cy="57.7" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="99.3" cy="56.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.4" cy="59.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="128.2" cy="56.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="30.6" cy="75.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="44.7" cy="72.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="61.0" cy="70.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.7" cy="71.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="85.4" cy="71.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="100.5" cy="74.6" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="114.2" cy="73.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="130.8" cy="72.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="30.2" cy="85.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.1" cy="86.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="59.5" cy="87.6" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="72.0" cy="88.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.0" cy="87.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="103.0" cy="89.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="114.5" cy="88.4" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="130.2" cy="89.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="31.1" cy="101.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="46.7" cy="101.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.2" cy="104.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="71.2" cy="102.9" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="84.9" cy="103.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="102.8" cy="103.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="117.7" cy="102.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.1" cy="103.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="30.4" cy="117.8" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="46.0" cy="120.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="58.5" cy="118.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.7" cy="119.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.9" cy="120.5" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="103.1" cy="116.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.2" cy="118.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="127.7" cy="117.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="28.3" cy="131.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.1" cy="134.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="56.7" cy="131.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="72.4" cy="134.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="85.1" cy="132.7" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="101.7" cy="134.9" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="117.4" cy="134.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="129.0" cy="132.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.3" cy="149.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="46.6" cy="146.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="57.0" cy="146.7" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="71.6" cy="147.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.6" cy="146.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="99.0" cy="147.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.1" cy="148.3" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="132.4" cy="149.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 3</div></div><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="160" height="170" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 4: מולקולות B ארוכות בשכבה נפרדת מעל המים"><rect x="21" y="48" width="118" height="52" fill="#dcfce7"/><rect x="21" y="100" width="118" height="59" fill="#e0f2fe"/><path d="M20 12 V150 Q20 160 30 160 H130 Q140 160 140 150 V12" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><circle cx="30.1" cy="108.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="45.2" cy="106.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="60.6" cy="109.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.8" cy="109.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="86.7" cy="107.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="99.5" cy="108.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="113.6" cy="106.3" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="128.6" cy="106.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.2" cy="120.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="41.8" cy="120.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="56.6" cy="121.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="70.5" cy="123.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="87.8" cy="120.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="100.3" cy="121.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="115.1" cy="120.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.8" cy="124.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="29.8" cy="135.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="42.2" cy="134.4" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="57.8" cy="135.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="74.5" cy="134.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="84.8" cy="137.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="101.6" cy="134.6" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="116.0" cy="134.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="130.2" cy="137.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="31.8" cy="150.8" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="43.1" cy="149.5" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="56.9" cy="151.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="73.1" cy="151.1" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="86.3" cy="148.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="103.1" cy="151.9" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="117.6" cy="151.2" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="131.7" cy="151.0" r="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1"/><circle cx="28.0" cy="58.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="36.9" cy="63.3" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="45.8" cy="60.5" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="54.7" cy="65.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="63.6" cy="63.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="84.0" cy="56.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="93.0" cy="59.1" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="101.9" cy="54.1" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="110.9" cy="57.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="119.8" cy="52.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="30.0" cy="76.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="39.0" cy="79.2" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="47.9" cy="74.4" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="56.9" cy="77.6" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="65.9" cy="72.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="86.0" cy="78.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="95.0" cy="82.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="103.9" cy="79.9" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="112.9" cy="84.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="121.8" cy="81.8" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="56.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="65.0" cy="96.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="74.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="83.0" cy="96.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/><circle cx="92.0" cy="92.0" r="5" fill="#22c55e" stroke="#166534" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 4</div></div><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">מקרא: <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#38bdf8;vertical-align:middle;margin:0 3px"></span>מולקולת מים &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#f59e0b;vertical-align:middle;margin:0 3px"></span>מולקולת A &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#22c55e;vertical-align:middle;margin:0 3px"></span>מולקולת B</div></div>',
      options:['בכלי אחד נראה נוזל אחיד, ובכלי השני נראות שתי שכבות נפרדות','בכלי אחד המולקולות ארוכות ובכלי השני קצרות','בכלי אחד יש כוחות משיכה בין המולקולות ובכלי השני אין','אין הבדל הנראה לעין – ההבדל הוא רק ברמת החלקיקים'],correct:[0],
      explain:'תיאור מאקרוסקופי הוא מה שרואים ומודדים: תערובת הומוגנית נראית כנוזל אחיד אחד, ותערובת הטרוגנית נראית כשתי שכבות. אורך המולקולות והכוחות ביניהן הם תיאורים מיקרוסקופיים.'},
     {id:4,difficulty:'easy',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 12 סעיף ב (מותאם לרב-ברירה)',
@@ -7004,12 +7021,14 @@ GQ_BANKS['materials'] = {
     {id:7,difficulty:'easy',text:'חומר טהור הבנוי מסוג אחד בלבד של אטומים נקרא:',
      options:['תרכובת','תערובת הומוגנית','יסוד','תמיסה'],correct:[2],
      explain:'יסוד הוא חומר טהור שכל אטומיו מאותו סוג (למשל Fe, O₂). בתרכובת יש אטומים משני סוגים לפחות הקשורים זה לזה; תערובת ותמיסה מכילות כמה חומרים.'},
-    {id:8,difficulty:'easy',text:'באיור חלקיקי של חומר בכלי: כל החלקיקים זהים, וכל חלקיק בנוי משני סוגי אטומים הקשורים זה לזה. איזה סוג חומר מתואר באיור?',
+    {id:8,difficulty:'easy',text:'באיור שלפניכם מתואר חומר בכלי סגור, ברמת החלקיקים. איזה סוג חומר מתואר באיור?',
+     fig:'<svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור חלקיקי: כל החלקיקים זהים, כל חלקיק בנוי משני אטומים מסוגים שונים"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="35.0" cy="35.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="36.0" cy="48.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="85.0" cy="30.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="72.5" cy="26.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="140.0" cy="38.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="131.1" cy="47.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="170.0" cy="80.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="159.7" cy="72.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="55.0" cy="78.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="45.8" cy="68.8" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="110.0" cy="75.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="121.9" cy="80.2" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="35.0" cy="112.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="48.0" cy="113.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="95.0" cy="112.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="101.8" cy="100.9" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="150.0" cy="115.0" r="9" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="149.2" cy="128.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">עיגולים בצבעים שונים מייצגים אטומים של יסודות שונים</div>',
      options:['יסוד','תרכובת','תערובת של שני יסודות','תערובת הטרוגנית'],correct:[1],
-     explain:'חלקיקים זהים → חומר טהור. בכל חלקיק אטומים מסוגים שונים קשורים זה לזה → תרכובת (למשל H₂O, CO₂). ביסוד כל האטומים מאותו סוג; בתערובת יש כמה סוגי חלקיקים.'},
-    {id:9,difficulty:'easy',text:'באיור חלקיקי של כלי: חלקיקים משני סוגים – מולקולות דו-אטומיות של יסוד אחד, ואטומים בודדים של יסוד אחר. החלקיקים מפוזרים בכלי ואינם קשורים זה לזה. מה יש בכלי?',
+     explain:'באיור כל החלקיקים זהים → חומר טהור. בכל חלקיק שני אטומים מסוגים שונים הקשורים זה לזה → תרכובת (למשל H₂O, CO₂). ביסוד כל האטומים מאותו סוג; בתערובת יש כמה סוגי חלקיקים.'},
+    {id:9,difficulty:'easy',text:'באיור שלפניכם מתוארים החלקיקים שבכלי סגור. מה יש בכלי?',
+     fig:'<svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור חלקיקי: מולקולות דו-אטומיות של יסוד אחד ואטומים בודדים של יסוד אחר"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="34.8" cy="30.3" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="45.2" cy="39.7" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="127.0" cy="29.9" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="113.0" cy="30.1" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="69.3" cy="78.0" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="70.7" cy="92.0" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="161.1" cy="91.6" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="148.9" cy="98.4" r="8" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/><circle cx="82.0" cy="42.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="165.0" cy="45.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="28.0" cy="78.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="112.0" cy="110.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="40.0" cy="118.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/><circle cx="170.0" cy="125.0" r="8" fill="#f59e0b" stroke="#b45309" stroke-width="1"/></svg><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">עיגולים בצבעים שונים מייצגים אטומים של יסודות שונים</div>',
      options:['יסוד אחד','תרכובת','תערובת של שני יסודות','תערובת של יסוד ותרכובת'],correct:[2],
-     explain:'שני סוגי חלקיקים שאינם קשורים זה לזה → תערובת. כל סוג חלקיק בנוי מסוג אחד של אטומים (מולקולה דו-אטומית כמו O₂, ואטום בודד כמו He) → שני יסודות. אין חלקיק עם אטומים שונים קשורים, ולכן אין תרכובת.'},
+     explain:'באיור שני סוגי חלקיקים שאינם קשורים זה לזה (מולקולות דו-אטומיות ואטומים בודדים) → תערובת. כל סוג חלקיק בנוי מסוג אחד של אטומים (מולקולה דו-אטומית כמו O₂, ואטום בודד כמו He) → שני יסודות. אין חלקיק עם אטומים שונים קשורים, ולכן אין תרכובת.'},
     {id:10,difficulty:'easy',text:'איזה מן החומרים שלפניכם הוא תרכובת?',
      options:['O₂(g)','Fe(s)','CO₂(g)','Ne(g)'],correct:[2],
      explain:'CO₂ בנוי מאטומי פחמן וחמצן הקשורים זה לזה – תרכובת. O₂ הוא יסוד (שני אטומים זהים במולקולה), Fe ו-Ne יסודות.'},
@@ -7347,9 +7366,9 @@ GQ_BANKS['states'] = {
     <div class="gq-leg-title">📋 שלושת מצבי הצבירה בשלוש רמות</div>
     <table>
       <tr><th>מצב</th><th>סמל</th><th>מאקרוסקופי (מה רואים)</th><th>מיקרוסקופי (חלקיקים)</th></tr>
-      <tr><td>מוצק</td><td><span class="fg">(s)</span></td><td>צורה ונפח קבועים</td><td>צפופים, מסודרים, רועדים במקומם</td></tr>
-      <tr><td>נוזל</td><td><span class="fg">(l)</span></td><td>נפח קבוע, צורה לפי הכלי</td><td>צפופים, לא מסודרים, נעים וזורמים</td></tr>
-      <tr><td>גז</td><td><span class="fg">(g)</span></td><td>ממלא את כל הכלי, ניתן לדחיסה</td><td>מרחקים גדולים, תנועה אקראית מהירה</td></tr>
+      <tr><td>מוצק</td><td><span class="fg">(s)</span></td><td>צורה ונפח קבועים</td><td>צפופים ומסודרים; תנועת תנודה בלבד (רעידה במקום)</td></tr>
+      <tr><td>נוזל</td><td><span class="fg">(l)</span></td><td>נפח קבוע, צורה לפי הכלי</td><td>צפופים, לא מסודרים; תנועות תנודה, סיבוב ומעתק</td></tr>
+      <tr><td>גז</td><td><span class="fg">(g)</span></td><td>ממלא את כל הכלי, ניתן לדחיסה</td><td>מרחקים גדולים; תנועות תנודה, סיבוב ומעתק – מהירות ואקראיות</td></tr>
       <tr><td>מומס במים</td><td><span class="fg">(aq)</span></td><td colspan="2">חלקיקי החומר מפוזרים בין מולקולות המים (תמיסה מימית)</td></tr>
     </table>
     <div class="gq-leg-title">🔁 מעברי מצב</div>
@@ -7360,14 +7379,14 @@ GQ_BANKS['states'] = {
       <tr><td>נוזל → גז</td><td>אידוי / רתיחה</td><td><span class="ex">Br₂(l) → Br₂(g)</span></td></tr>
       <tr><td>גז → נוזל</td><td>עיבוי</td><td><span class="ex">H₂O(g) → H₂O(l)</span></td></tr>
       <tr><td>מוצק → גז</td><td>המראה (סובלימציה)</td><td><span class="ex">I₂(s) → I₂(g)</span></td></tr>
-      <tr><td>גז → מוצק</td><td>התעבות ישירה</td><td><span class="ex">H₂O(g) → H₂O(s)</span></td></tr>
+      <tr><td>גז → מוצק</td><td>ריבוץ</td><td><span class="ex">H₂O(g) → H₂O(s)</span></td></tr>
     </table>
-    <div class="note">קביעת מצב צבירה: מתחת לטמפרטורת ההיתוך – מוצק; בין ההיתוך לרתיחה – נוזל; מעל הרתיחה – גז. במעבר מצב החלקיקים עצמם לא משתנים (בחומר מולקולרי לא נשברים קשרים קוולנטיים) – משתנים רק המרחקים והכוחות בין החלקיקים.</div>
+    <div class="note">קביעת מצב צבירה: מתחת לטמפרטורת ההיתוך – מוצק; בין ההיתוך לרתיחה – נוזל; מעל הרתיחה – גז. בשינוי מצב צבירה, החלקיקים עצמם אינם משתנים (בחומר מולקולרי לא נשברים קשרים קוולנטיים) – משתנים רק המרחקים והכוחות בין החלקיקים.</div>
   </div>`,
   easyFirst: true,
   perSession: 20,
   aiName: 'ד"ר צבירה',
-  ai: `אתה ד"ר צבירה – מורה כימיה לכיתה י בישראל, מומחה למצבי צבירה. נושאים מותרים: מוצק/נוזל/גז, טמפרטורת היתוך ורתיחה, קביעת מצב צבירה בטמפרטורה נתונה מטבלה, שלוש רמות תיאור (מאקרוסקופית – מה רואים ומודדים; מיקרוסקופית – מרחקים, סדר ותנועה של חלקיקים; רמת הסמל – s, l, g, aq), מעברי מצב (היתוך, הקפאה, אידוי/רתיחה, עיבוי, המראה, התעבות ישירה) וניסוחם, מה נשמר במעבר (זהות החלקיקים) ומה משתנה (מרחקים וכוחות בין החלקיקים), ובחומר מולקולרי לא נשברים קשרים קוולנטיים במעבר מצב. ענה בעברית פשוטה וקצרה. אל תחשוף תשובות – כוון בשאלות מנחות. הדרך לקבוע מצב צבירה: השווה את הטמפרטורה הנתונה לטמפרטורת ההיתוך ולטמפרטורת הרתיחה. אל תשתמש במונחים מחוץ לתוכנית: אנתלפיה, לחץ אדים, דיאגרמת פאזות.`,
+  ai: `אתה ד"ר צבירה – מורה כימיה לכיתה י בישראל, מומחה למצבי צבירה. נושאים מותרים: מוצק/נוזל/גז, טמפרטורת היתוך ורתיחה, קביעת מצב צבירה בטמפרטורה נתונה מטבלה, שלוש רמות תיאור (מאקרוסקופית – מה רואים ומודדים; מיקרוסקופית – מרחקים, סדר ותנועה של חלקיקים; רמת הסמל – s, l, g, aq), מעברי מצב (היתוך, הקפאה, אידוי/רתיחה, עיבוי, המראה, ריבוץ) וניסוחם, מה נשמר במעבר (זהות החלקיקים) ומה משתנה (מרחקים וכוחות בין החלקיקים), ובחומר מולקולרי לא נשברים קשרים קוולנטיים במעבר מצב. ענה בעברית פשוטה וקצרה. אל תחשוף תשובות – כוון בשאלות מנחות. הדרך לקבוע מצב צבירה: השווה את הטמפרטורה הנתונה לטמפרטורת ההיתוך ולטמפרטורת הרתיחה. אל תשתמש במונחים מחוץ לתוכנית: אנתלפיה, לחץ אדים, דיאגרמת פאזות.`,
   aiGreet: 'היי, אני ד"ר צבירה. טיפ: ציר טמפרטורה בראש – מתחת להיתוך מוצק, בין היתוך לרתיחה נוזל, מעל הרתיחה גז. תקוע? כתוב "לא הבנתי".',
   aiQuick: ['לא הבנתי את השאלה','תן לי רמז','איך קובעים מצב צבירה מטבלה?','מה נשמר במעבר מצב צבירה?'],
 
@@ -7376,38 +7395,38 @@ GQ_BANKS['states'] = {
     // ── מבוסס בגרויות ──
     {id:1,difficulty:'medium',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 5 סעיף א (מותאם לרב-ברירה)',
      text:'הגז אתאן, C₂H₆(g), משמש חומר מוצא בתעשיית החומרים הפלסטיים. גז אתאן נמצא בכלי סגור. מהו ההיגד הנכון ברמה המיקרוסקופית?',
-     options:['המרחקים בין המולקולות גדולים מאוד ביחס לגודלן, והן נעות באופן אקראי בכל נפח הכלי','המולקולות צמודות זו לזו ונעות יחד בזרימה','המולקולות מסודרות במבנה קבוע ורועדות במקומן','המולקולות מתפרקות לאטומי פחמן ומימן הנעים בחופשיות'],correct:[0],
-     explain:'בגז המרחקים בין החלקיקים גדולים מאוד ביחס לגודלם, הכוחות ביניהם זניחים, והם נעים במהירות ובאופן אקראי בכל נפח הכלי. ב – תיאור של נוזל; ג – תיאור של מוצק; ד – שגוי, מולקולות האתאן נשארות שלמות בגז.'},
+     options:['המולקולות צמודות זו לזו ונעות יחד בזרימה','המולקולות מסודרות במבנה קבוע ורועדות במקומן','המרחקים בין המולקולות גדולים מאוד ביחס לגודלן, והן נעות באופן אקראי בכל נפח הכלי','המולקולות מתפרקות לאטומי פחמן ומימן הנעים בחופשיות'],correct:[2],
+     explain:'בגז המרחקים בין החלקיקים גדולים מאוד ביחס לגודלם, הכוחות ביניהם זניחים, והם נעים במהירות ובאופן אקראי בכל נפח הכלי. א – תיאור של נוזל; ב – תיאור של מוצק; ד – שגוי, מולקולות האתאן נשארות שלמות בגז.'},
     {id:2,difficulty:'hard',src:'בגרות קיץ תשע"ז 2017, שאלון 37381, שאלה 7 סעיף א (מותאם לרב-ברירה)',
      text:'ברום, Br₂(l), הוא נוזל בטמפרטורת החדר. איזה ניסוח מתאר נכון את תהליך האידוי של ברום בטמפרטורת הרתיחה שלו?',
-     options:['Br₂(l) → Br₂(g)','Br₂(l) → 2Br(g)','Br₂(g) → Br₂(l)','Br₂(l) → 2Br(l)'],correct:[0],
-     explain:'באידוי משתנה רק מצב הצבירה: מולקולות Br₂ עוברות מנוזל לגז. הקשר הקוולנטי Br–Br אינו נשבר, ולכן התוצר הוא Br₂(g) ולא אטומי Br (ב). ג מתאר עיבוי – התהליך ההפוך. ד – פירוק המולקולה ללא שינוי מצב צבירה, לא קורה באידוי.'},
+     options:['Br₂(l) → 2Br(g)','Br₂(l) → Br₂(g)','Br₂(g) → Br₂(l)','Br₂(l) → 2Br(l)'],correct:[1],
+     explain:'באידוי משתנה רק מצב הצבירה: מולקולות Br₂ עוברות מנוזל לגז. הקשר הקוולנטי Br–Br אינו נשבר, ולכן התוצר הוא Br₂(g) ולא אטומי Br (א). ג מתאר עיבוי – התהליך ההפוך. ד – פירוק המולקולה ללא שינוי מצב צבירה, לא קורה באידוי.'},
     {id:3,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף א (מותאם לרב-ברירה)',
      text:'שני חומרים מולקולריים, A ו-B, נמצאים בשני כלים נפרדים. בטבלה נתונות טמפרטורות ההיתוך והרתיחה שלהם. מהו מצב הצבירה של כל אחד מן החומרים בטמפרטורת החדר (25°C)?',
      fig:'<table class="gq-tbl"><tr><th>החומר</th><th>טמפרטורת היתוך (°C)</th><th>טמפרטורת רתיחה (°C)</th></tr><tr><td>A</td><td>−45</td><td>157</td></tr><tr><td>B</td><td>−114</td><td>78</td></tr></table>',
-     options:['A נוזל, B נוזל','A מוצק, B נוזל','A נוזל, B גז','A גז, B נוזל'],correct:[0],
+     options:['A מוצק, B נוזל','A נוזל, B גז','A גז, B נוזל','A נוזל, B נוזל'],correct:[3],
      explain:'חומר הוא נוזל כאשר הטמפרטורה נמצאת בין טמפרטורת ההיתוך לטמפרטורת הרתיחה. 25°C גבוה מ-−45 ונמוך מ-157 → A נוזל; 25°C גבוה מ-−114 ונמוך מ-78 → B נוזל.'},
     {id:4,difficulty:'hard',src:'בגרות 2021 (מועד קורונה 1), שאלון 37381, שאלה 11 סעיף ד (מותאם לרב-ברירה)',
      text:'טמפרטורת ההיתוך של אתילן גליקול היא −13°C וטמפרטורת הרתיחה שלו היא 197°C. מהו ההיגד הנכון המתאר הבדל ברמה המיקרוסקופית בין אתילן גליקול בטמפרטורה של −25°C לבין אתילן גליקול בטמפרטורה של 250°C?',
-     options:['ב-−25°C המולקולות צפופות, מסודרות ורועדות במקומן; ב-250°C המרחקים בין המולקולות גדולים מאוד והן נעות בחופשיות בכל נפח הכלי','ב-−25°C המולקולות קטנות יותר מאשר ב-250°C','ב-250°C המולקולות מתפרקות לאטומי C, H ו-O','ב-−25°C החלקיקים אינם נעים כלל, וב-250°C המולקולות זורמות כנוזל'],correct:[0],
-     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: מולקולות צפופות ומסודרות שרק רועדות במקומן. ב-250°C (מעל טמפרטורת הרתיחה) החומר גז: מרחקים גדולים ותנועה חופשית. גודל המולקולות וזהותן אינם משתנים (ב, ג שגויים). ד – במוצק יש תנועת רעידה, וב-250°C החומר גז ולא נוזל.'},
+     options:['ב-−25°C המולקולות קטנות יותר מאשר ב-250°C','ב-250°C המולקולות מתפרקות לאטומי C, H ו-O','ב-−25°C המולקולות צפופות, מסודרות ורועדות במקומן; ב-250°C המרחקים בין המולקולות גדולים מאוד והן נעות בחופשיות בכל נפח הכלי','ב-−25°C החלקיקים אינם נעים כלל, וב-250°C המולקולות זורמות כנוזל'],correct:[2],
+     explain:'ב-−25°C (מתחת לטמפרטורת ההיתוך) החומר מוצק: מולקולות צפופות ומסודרות שרק רועדות במקומן. ב-250°C (מעל טמפרטורת הרתיחה) החומר גז: מרחקים גדולים ותנועה חופשית. גודל המולקולות וזהותן אינם משתנים (א, ב שגויים). ד – במוצק יש תנועת רעידה, וב-250°C החומר גז ולא נוזל.'},
     {id:5,difficulty:'medium',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 9 סעיף ז (מותאם לרב-ברירה)',
      text:'"תמיסות המכילות את הכוהל אתאנול, C₂H₅OH(aq), בריכוזים שונים משמשות לניקוי משטחים. אחרי ניקוי המשטח, הכוהל מתנדף במהירות בלי להשאיר סימנים על המשטח." איזה ניסוח מתאר את התהליך המתואר בציטוט?',
-     options:['C₂H₅OH(aq) → C₂H₅OH(g)','C₂H₅OH(aq) → C₂H₅OH(s)','C₂H₅OH(aq) → C₂H₄(g) + H₂O(g)','C₂H₅OH(aq) → 2C(s) + 3H₂(g) + ½O₂(g)'],correct:[0],
-     explain:'התנדפות היא מעבר למצב גז. האתאנול נמצא בתחילה בתמיסה מימית (aq) ועובר למצב גז (g); מולקולות האתאנול עצמן אינן משתנות. ב – מעבר למוצק; ג ו-ד – תגובות פירוק שבהן המולקולה משתנה, ולא מעבר מצב צבירה.'},
+     options:['C₂H₅OH(aq) → C₂H₅OH(s)','C₂H₅OH(aq) → C₂H₅OH(g)','C₂H₅OH(aq) → C₂H₄(g) + H₂O(g)','C₂H₅OH(aq) → 2C(s) + 3H₂(g) + ½O₂(g)'],correct:[1],
+     explain:'התנדפות היא מעבר למצב גז. האתאנול נמצא בתחילה בתמיסה מימית (aq) ועובר למצב גז (g); מולקולות האתאנול עצמן אינן משתנות. א – מעבר למוצק; ג ו-ד – תגובות פירוק שבהן המולקולה משתנה, ולא מעבר מצב צבירה.'},
     {id:6,difficulty:'easy',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 13 סעיף ה (מותאם לרב-ברירה)',
      text:'כאשר שופכים אלכוג\'ל המכיל אתאנול, C₂H₅OH(l), על כפות הידיים ומשפשפים אותן, מתרחש התהליך: C₂H₅OH(l) → C₂H₅OH(g). מהו השינוי שעובר האתאנול בתהליך זה?',
-     options:['אידוי','המסה במים','עיבוי','פירוק'],correct:[0],
+     options:['המסה במים','עיבוי','אידוי','פירוק'],correct:[2],
      explain:'מעבר מנוזל (l) לגז (g) הוא אידוי. עיבוי הוא המעבר ההפוך (גז → נוזל). המסה במים הייתה מסומנת (aq), ופירוק היה משנה את זהות המולקולה.'},
     {id:7,difficulty:'hard',src:'בגרות 2021 (מועד קורונה 2), שאלון 37381, שאלה 14 סעיף ג (מותאם לרב-ברירה)',
-     text:'אשלגן יודי, KI(s), הוא חומר יוני. לפניכם ארבעה ניסוחים (1)–(4). (Δ מעל החץ מסמל חימום.) איזה מן הניסוחים מסמל תהליך היתוך של אשלגן יודי?',
-     fig:'<div class="cf">(1) K⁺(l) + I⁻(l) → KI(s) &nbsp;(Δ)<br>(2) KI(s) → K⁺(aq) + I⁻(aq) &nbsp;(H₂O(l))<br>(3) KI(s) + H₂O(l) → K⁺(aq) + I⁻(aq)<br>(4) KI(s) → K⁺(l) + I⁻(l) &nbsp;(Δ)</div>',
+     text:'אשלגן יודי, KI(s), הוא חומר יוני. לפניכם ארבעה ניסוחים (1)–(4). (הסימול Δ מעל החץ מסמל חימום.) איזה מן הניסוחים מסמל תהליך היתוך של אשלגן יודי?',
+     fig:'<div class="cf">(1) K⁺(l) + I⁻(l) <span class="ovr"><small>Δ</small><span class="ovr-a">→</span></span> KI(s)<br>(2) KI(s) <span class="ovr"><small>H₂O(l)</small><span class="ovr-a">→</span></span> K⁺(aq) + I⁻(aq)<br>(3) KI(s) + H₂O(l) <span class="ovr"><small>&nbsp;</small><span class="ovr-a">→</span></span> K⁺(aq) + I⁻(aq)<br>(4) KI(s) <span class="ovr"><small>Δ</small><span class="ovr-a">→</span></span> K⁺(l) + I⁻(l)</div>',
      options:['ניסוח (1)','ניסוח (2)','ניסוח (3)','ניסוח (4)'],correct:[3],
      explain:'היתוך הוא מעבר ממוצק לנוזל בחימום: המוצק היוני KI(s) הופך לנתך של יונים ניידים, K⁺(l) + I⁻(l) – ניסוח (4). ניסוח (1) הוא התהליך ההפוך (התמצקות). ניסוחים (2) ו-(3) מתארים המסה במים (aq), ולא היתוך; ב-(3) המים נכתבו בטעות כמגיב.'},
     {id:8,difficulty:'medium',src:'בגרות קיץ תשפ"ה 2025, שאלון 37182, שאלה 10ג.ii (מותאם לרב-ברירה)',
-     text:'מגנזיום יודי, MgI₂(s), הוא תרכובת של מגנזיום ויוד הנמצאת בשימוש תעשייתי. איזה ניסוח מתאר את תהליך ההיתוך של מגנזיום יודי?',
-     options:['MgI₂(s) → MgI₂(l)','MgI₂(s) → Mg²⁺(aq) + 2I⁻(aq)','MgI₂(s) → Mg(l) + I₂(l)','MgI₂(s) → MgI₂(g)'],correct:[0],
-     explain:'היתוך הוא מעבר ממוצק (s) לנוזל (l) של אותו חומר – הנוסחה נשארת, משתנה רק מצב הצבירה. (בחומר יוני אפשר לכתוב גם Mg²⁺(l) + 2I⁻(l).) ב – המסה במים; ג – פירוק ליסודות; ד – מעבר ישיר לגז (המראה).'},
+     text:'מגנזיום יודי, MgI₂(s), הוא תרכובת יונית של מגנזיום ויוד הנמצאת בשימוש תעשייתי. איזה ניסוח מתאר את תהליך ההיתוך של מגנזיום יודי?',
+     options:['MgI₂(s) → Mg²⁺(aq) + 2I⁻(aq)','MgI₂(s) → Mg²⁺(l) + 2I⁻(l)','MgI₂(s) → Mg(l) + I₂(l)','MgI₂(s) → MgI₂(g)'],correct:[1],
+     explain:'היתוך הוא מעבר ממוצק לנוזל. מגנזיום יודי הוא חומר יוני, ולכן בהיתוך הסריג היוני הופך לנתך של יונים ניידים, ורושמים את היונים במצב צבירה נוזל: Mg²⁺(l) + 2I⁻(l). א – המסה במים (aq); ג – פירוק ליסודות; ד – מעבר ישיר לגז (המראה).'},
 
     // ── קל ──
     {id:9,difficulty:'easy',text:'קרח יבש, CO₂(s), "נעלם" בטמפרטורת החדר והופך ישירות לגז בלי לעבור דרך מצב נוזל. מהו שם התהליך?',
@@ -7419,7 +7438,7 @@ GQ_BANKS['states'] = {
     {id:11,difficulty:'easy',text:'בטבלה נתונות טמפרטורות היתוך ורתיחה של ארבעה חומרים. איזה מן החומרים נמצא במצב גז בטמפרטורת החדר (25°C)?',
      fig:'<table class="gq-tbl"><tr><th>החומר</th><th>טמפרטורת היתוך (°C)</th><th>טמפרטורת רתיחה (°C)</th></tr><tr><td>O₂</td><td>−218</td><td>−183</td></tr><tr><td>C₂H₅OH</td><td>−114</td><td>78</td></tr><tr><td>NaCl</td><td>801</td><td>1413</td></tr><tr><td>Br₂</td><td>−7</td><td>59</td></tr></table>',
      options:['O₂','C₂H₅OH','NaCl','Br₂'],correct:[0],
-     explain:'חומר הוא גז כאשר הטמפרטורה גבוהה מטמפרטורת הרתיחה שלו. 25°C גבוה מ-−183°C → O₂ גז. אתאנול וברום נוזלים (25°C בין ההיתוך לרתיחה), NaCl מוצק (25°C מתחת ל-801°C).'},
+     explain:'חומר הוא גז כאשר הטמפרטורה גבוהה מטמפרטורת הרתיחה שלו. 25°C גבוה מ-−183°C → O₂ גז. אתאנול וברום נוזלים (25°C בין ההיתוך לרתיחה), NaCl מוצק (25°C נמוך מ-801°C, כלומר מתחת לטמפרטורת ההיתוך שלו).'},
     {id:12,difficulty:'easy',text:'על בקבוק קר שהוצא מן המקרר מופיעות טיפות מים. מהו שם התהליך ומהו ניסוחו?',
      options:['אידוי, H₂O(l) → H₂O(g)','עיבוי, H₂O(g) → H₂O(l)','היתוך, H₂O(s) → H₂O(l)','המראה, H₂O(s) → H₂O(g)'],correct:[1],
      explain:'אדי המים שבאוויר (גז) מתקררים במגע עם הבקבוק והופכים לנוזל – עיבוי: H₂O(g) → H₂O(l). המים לא הגיעו מתוך הבקבוק ולא היו מוצק.'},
@@ -7431,13 +7450,13 @@ GQ_BANKS['states'] = {
      explain:'במוצק החלקיקים צפופים, מסודרים ורועדים במקומם – לכן למוצק צורה ונפח קבועים. בנוזל החלקיקים צפופים אך נעים וזורמים; בגז המרחקים גדולים והתנועה חופשית.'},
     {id:15,difficulty:'easy',text:'10 גרם מים נוזליים התאדו לחלוטין בכלי סגור. מהו ההיגד הנכון?',
      options:['מסת אדי המים 10 גרם, ומספר המולקולות לא השתנה','מסת אדי המים קטנה מ-10 גרם, כי המולקולות התרחקו זו מזו','מולקולות המים התפרקו למימן ולחמצן','מספר המולקולות גדל, כי הגז תופס נפח גדול יותר'],correct:[0],
-     explain:'במעבר מצב צבירה החלקיקים עצמם נשמרים – אותן מולקולות H₂O, באותו מספר ובאותה מסה. משתנים רק המרחקים בין המולקולות (ולכן הנפח) והכוחות ביניהן.'},
+     explain:'בשינוי מצב צבירה, החלקיקים עצמם נשמרים – אותן מולקולות H₂O, באותו מספר ובאותה מסה. משתנים רק המרחקים בין המולקולות (ולכן הנפח) והכוחות ביניהן.'},
     {id:16,difficulty:'easy',text:'מהו ההיגד הנכון לגבי נוזל ברמה המאקרוסקופית?',
      options:['לנוזל צורה ונפח קבועים','לנוזל נפח קבוע, והוא מקבל את צורת הכלי','נוזל ממלא את כל נפח הכלי שבו הוא נמצא','נוזל ניתן לדחיסה בקלות'],correct:[1],
      explain:'לנוזל נפח קבוע, אך צורתו משתנה לפי הכלי (הוא זורם). צורה ונפח קבועים – מוצק. מילוי כל הכלי ודחיסות קלה – גז.'},
 
     // ── בינוני ──
-    {id:17,difficulty:'medium',text:'בטבלה נתונות טמפרטורות היתוך ורתיחה של ארבעה חומרים. איזה מן החומרים נמצא במצב נוזל בטמפרטורה של −50°C?',
+    {id:17,difficulty:'medium',text:'בטבלה נתונות טמפרטורות היתוך ורתיחה של ארבעה חומרים. איזה מן החומרים נמצא במצב נוזל בטמפרטורה של −50°C (מינוס 50 מעלות צלזיוס)?',
      fig:'<table class="gq-tbl"><tr><th>החומר</th><th>טמפרטורת היתוך (°C)</th><th>טמפרטורת רתיחה (°C)</th></tr><tr><td>Hg</td><td>−39</td><td>357</td></tr><tr><td>I₂</td><td>114</td><td>184</td></tr><tr><td>Cl₂</td><td>−101</td><td>−34</td></tr><tr><td>H₂O</td><td>0</td><td>100</td></tr></table>',
      options:['Hg','I₂','Cl₂','H₂O'],correct:[2],
      explain:'−50°C נמצא בין −101°C (היתוך) ל-−34°C (רתיחה) של Cl₂ → נוזל. כספית: −50°C נמוך מטמפרטורת ההיתוך −39°C → מוצק. יוד ומים – מוצקים ב-−50°C.'},
@@ -7448,8 +7467,8 @@ GQ_BANKS['states'] = {
      options:['הקשרים הקוולנטיים O–H בתוך המולקולות','הכוחות (הקשרים) בין המולקולות בלבד','גם הקשרים הקוולנטיים וגם הכוחות בין המולקולות','לא נשבר דבר'],correct:[1],
      explain:'במעבר מצב צבירה של חומר מולקולרי נשברים רק הכוחות בין המולקולות; הקשרים הקוולנטיים שבתוך המולקולות נשארים שלמים, ולכן באדים יש מולקולות H₂O שלמות.'},
     {id:20,difficulty:'medium',text:'בלילה קר נוצר כפור (קרח) על חלונות המכונית ישירות מאדי המים שבאוויר. מהו שם התהליך ומהו ניסוחו?',
-     options:['עיבוי, H₂O(g) → H₂O(l)','התעבות ישירה, H₂O(g) → H₂O(s)','הקפאה, H₂O(l) → H₂O(s)','המראה, H₂O(s) → H₂O(g)'],correct:[1],
-     explain:'אדי מים (גז) הופכים ישירות למוצק בלי לעבור דרך נוזל – התעבות ישירה: H₂O(g) → H₂O(s). הקפאה מתחילה מנוזל; עיבוי מסתיים בנוזל.'},
+     options:['עיבוי, H₂O(g) → H₂O(l)','ריבוץ, H₂O(g) → H₂O(s)','הקפאה, H₂O(l) → H₂O(s)','המראה, H₂O(s) → H₂O(g)'],correct:[1],
+     explain:'אדי מים (גז) הופכים ישירות למוצק בלי לעבור דרך נוזל – ריבוץ: H₂O(g) → H₂O(s). ריבוץ הוא התהליך ההפוך להמראה. הקפאה מתחילה מנוזל; עיבוי מסתיים בנוזל.'},
 
     // ── קשה ──
     {id:21,difficulty:'hard',text:'בטבלה נתונות טמפרטורות היתוך ורתיחה של שני חומרים, X ו-Y. באיזו טמפרטורה X מוצק ו-Y נוזל?',
@@ -7543,6 +7562,7 @@ GQ_BANKS['vdw'] = {
      explain:'אידוי הוא מעבר מצב צבירה של חומר מולקולרי: המולקולות Br₂ מתרחקות זו מזו ונשברות רק אינטראקציות ון-דר-ולס ביניהן (30 kJ/mol). פירוק הקשר הקוולנטי Br–Br בתוך המולקולה דורש אנרגיה גדולה בהרבה (193 kJ/mol). בין מולקולות Br₂ אין קשרי מימן.'},
     {id:14,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 10 סעיף ב (מותאם לרב-ברירה)',
      text:'שני חומרים, A ו-B, הם כהלים. חומר A: טמפרטורת היתוך −45°C, טמפרטורת רתיחה 157°C. חומר B: טמפרטורת היתוך −114°C, טמפרטורת רתיחה 78°C. באיור 1 מתוארות מולקולות כוהל קצרות (שני אטומי פחמן וקבוצת OH), ובאיור 2 מולקולות כוהל בעלות שרשרת פחמנית ארוכה. באיזה איור מתואר חומר A, ומהו הגורם?',
+     fig:'<div style="direction:rtl"><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 1: מולקולות כוהל קצרות"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="22.8" cy="21.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="32.8" cy="30.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="46.0" cy="27.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="93.7" cy="19.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="107.1" cy="19.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="115.5" cy="9.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="160.8" cy="29.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="159.3" cy="42.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="169.0" cy="51.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="29.0" cy="67.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="42.3" cy="68.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="51.5" cy="59.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="93.7" cy="65.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="100.1" cy="77.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="113.4" cy="79.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="148.1" cy="89.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="161.1" cy="86.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="166.5" cy="74.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="28.3" cy="109.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="39.7" cy="116.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="52.2" cy="111.1" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="95.5" cy="113.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="108.3" cy="116.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="119.1" cy="108.9" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 1</div></div><div style="display:inline-block;margin:4px 8px;vertical-align:top"><svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור 2: מולקולות כוהל בעלות שרשרת ארוכה"><rect x="2" y="2" width="196" height="136" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><circle cx="14.3" cy="17.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="25.6" cy="24.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="38.2" cy="19.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="49.5" cy="26.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="62.1" cy="22.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="73.4" cy="29.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="85.9" cy="24.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="103.6" cy="37.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="116.3" cy="41.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="127.3" cy="33.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="140.1" cy="38.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="151.1" cy="30.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="163.8" cy="34.6" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="174.9" cy="27.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="11.8" cy="61.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="24.2" cy="66.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="35.7" cy="59.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="48.1" cy="64.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="59.7" cy="57.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="72.1" cy="62.8" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="83.6" cy="56.0" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="106.4" cy="77.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="117.5" cy="84.4" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="130.2" cy="79.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="141.4" cy="87.4" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="154.0" cy="82.9" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="165.2" cy="90.3" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="177.8" cy="85.8" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="14.3" cy="97.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="25.7" cy="104.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="38.2" cy="99.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="49.6" cy="106.1" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="62.1" cy="101.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="73.5" cy="108.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="86.0" cy="103.3" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/><circle cx="101.7" cy="121.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="114.2" cy="125.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="125.6" cy="118.5" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="138.1" cy="123.2" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="149.4" cy="116.0" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="162.0" cy="120.7" r="7" fill="#64748b" stroke="#334155" stroke-width="1"/><circle cx="173.3" cy="113.5" r="6" fill="#ef4444" stroke="#991b1b" stroke-width="1"/></svg><div style="direction:rtl;font-weight:800;font-size:13px;margin-top:2px">איור 2</div></div><div style="direction:rtl;font-size:12px;color:#334155;margin-top:6px">מקרא: <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#64748b;vertical-align:middle;margin:0 3px"></span>אטום פחמן (עם אטומי המימן הקשורים אליו) &nbsp; <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ef4444;vertical-align:middle;margin:0 3px"></span>קבוצת OH</div></div>',
      options:['איור 1 – מולקולות קטנות נארזות בצפיפות רבה יותר','איור 2 – למולקולות הארוכות ענן אלקטרונים גדול יותר, ולכן אינטראקציות ון-דר-ולס חזקות יותר','איור 2 – בין המולקולות הארוכות נוצרים יותר קשרי מימן','איור 1 – למולקולות הקצרות קוטביות גבוהה יותר'],correct:[1],
      explain:'לשני הכהלים קבוצת OH אחת, ולכן קשרי המימן ביניהם דומים. למולקולות הארוכות (איור 2) ענן אלקטרונים גדול יותר, אינטראקציות ון-דר-ולס חזקות יותר, ולכן טמפרטורת רתיחה גבוהה יותר – זהו חומר A (157°C). חומר B (78°C) הוא אתאנול – איור 1.'},
     {id:15,difficulty:'medium',src:'בגרות 2020 (מועד קורונה 1), שאלון 37381, שאלה 14 סעיף א (מותאם לרב-ברירה)',
@@ -9712,12 +9732,12 @@ gqBankTraps('balance',[
 // ───────────────────────────── 2. מלכודות ברמת השאלה ─────────────────────────────
 // states
 gqTrap('states',1,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבגז המולקולות "מתפרקות" לאטומים, אבל מולקולות האתאן נשארות שלמות – בגז רק המרחקים ביניהן גדולים והכוחות ביניהן זניחים.'});
-gqTrap('states',2,{1:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי הברום מתפרק לאטומי Br, אבל הקשר הקוולנטי Br–Br נשאר שלם; רק הכוחות בין המולקולות מתגברים: Br₂(l) → Br₂(g).', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שחימום "שובר את המולקולה", אבל אידוי משנה רק את מצב הצבירה – המולקולה Br₂ נשארת כפי שהיא.'});
-gqTrap('states',4,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן "מתרחבות" או שבקירור הן מתכווצות, אבל גודל המולקולה אינו משתנה – משתנים המרחקים בין המולקולות.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שמעל טמפרטורת הרתיחה המולקולה מתפרקת לאטומים, אבל ברתיחה נחלשים רק הכוחות בין המולקולות; המולקולה נשארת שלמה.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ולא נעים כלל, אבל גם במוצק החלקיקים רועדים במקומם – הם רק אינם מחליפים מקום.'});
+gqTrap('states',2,{0:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי הברום מתפרק לאטומי Br, אבל הקשר הקוולנטי Br–Br נשאר שלם; רק הכוחות בין המולקולות מתגברים: Br₂(l) → Br₂(g).', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שחימום "שובר את המולקולה", אבל אידוי משנה רק את מצב הצבירה – המולקולה Br₂ נשארת כפי שהיא.'});
+gqTrap('states',4,{0:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבחימום המולקולות עצמן "מתרחבות" או שבקירור הן מתכווצות, אבל גודל המולקולה אינו משתנה – משתנים המרחקים בין המולקולות.', 1:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שמעל טמפרטורת הרתיחה המולקולה מתפרקת לאטומים, אבל ברתיחה נחלשים רק הכוחות בין המולקולות; המולקולה נשארת שלמה.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שבמוצק החלקיקים "קפואים" ולא נעים כלל, אבל גם במוצק החלקיקים רועדים במקומם – הם רק אינם מחליפים מקום.'});
 gqTrap('states',5,{2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שהתנדפות היא "פירוק" של המולקולה, אבל התנדפות היא מעבר מצב צבירה בלבד – מולקולת האתאנול נשארת C₂H₅OH ועוברת למצב גז.', 3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שכאשר חומר "נעלם" הוא התפרק ליסודותיו, אבל האתאנול לא נעלם ולא התפרק – הוא עבר למצב גז כמולקולות שלמות.'});
 gqTrap('states',6,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שהאתאנול "מתפרק" כשהוא נעלם מהידיים, אבל הניסוח מראה את אותה מולקולה C₂H₅OH בשני הצדדים – זה אידוי, לא פירוק.'});
 gqTrap('states',7,{1:'סימול חומר ↔ סימול חלקיק: רבים חושבים שהמסה במים והיתוך הם אותו דבר – "המלח הופך לנוזל", אבל (aq) מסמל יונים מומסים במים, ו-(l) מסמל נתך טהור בחימום. היתוך: KI(s) → K⁺(l) + I⁻(l).', 2:'סימול חומר ↔ סימול חלקיק: רבים חושבים שאם המלח "נוזלי" בכוס מים – זהו היתוך, אבל זהו תהליך המסה: יונים (aq) מוקפים במולקולות מים, בטמפרטורת החדר; היתוך דורש חימום ל-681°C ואינו כולל מים.'});
-gqTrap('states',8,{1:'סימול חומר ↔ סימול חלקיק: רבים מחליפים בין היתוך להמסה, אבל (aq) מסמל מומס במים ולא נוזל. היתוך הוא (s) → (l) של אותו חומר, ללא מים.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבחימום התרכובת "מתפרקת" ליסודותיה, אבל היתוך הוא מעבר מצב צבירה בלבד – הנוסחה MgI₂ נשארת, רק המצב משתנה ל-(l).'});
+gqTrap('states',8,{0:'סימול חומר ↔ סימול חלקיק: רבים מחליפים בין היתוך להמסה, אבל (aq) מסמל מומס במים ולא נוזל. בהיתוך של חומר יוני מתקבל נתך של יונים ניידים המסומנים (l), ללא מים.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבחימום התרכובת "מתפרקת" ליסודותיה, אבל היתוך הוא מעבר מצב צבירה בלבד – בנתך נמצאים אותם יונים, Mg²⁺ ו-I⁻, שהיו במוצק; לא נוצרים היסודות מגנזיום ויוד.'});
 gqTrap('states',10,{1:'סימול חומר ↔ סימול חלקיק: רבים חושבים ש-(aq) פירושו "נוזל", אבל (aq) אינו מצב צבירה כלל – הוא מסמל חומר מומס במים. נוזל טהור מסומן (l).'});
 gqTrap('states',13,{3:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שכשקרח ניתך "משהו קורה למולקולות", אבל בהיתוך המולקולות H₂O נשארות שלמות – רק הסדר והמרחקים ביניהן משתנים. פירוק למימן וחמצן הוא תגובה כימית אחרת לגמרי.'});
 gqTrap('states',15,{1:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שגז "קל יותר" ולכן המסה קטנה, אבל אותן מולקולות באותו מספר – אותה מסה. הגז פחות צפוף כי המרחקים גדולים, לא כי המולקולות קלות יותר.', 2:'במעבר מצב נשברים קשרים קוולנטיים: רבים חושבים שבאידוי מים מתפרקים למימן וחמצן, אבל באדים יש מולקולות H₂O שלמות – נחלשו רק הכוחות ביניהן.', 3:'בלבול בין מאקרו, מיקרו וסמל: רבים חושבים שאם הנפח גדל – יש יותר מולקולות, אבל מספר המולקולות לא השתנה; הן פשוט התרחקו זו מזו.'});
@@ -13938,6 +13958,168 @@ buildENTable('en-polar-quiz');
     if(insertParent) insertParent.insertBefore(wrap, insertRef);
   });
 })();
+</script>
+
+<script>
+// ═══════════ תיקון כיווניות (RTL) – חיצים, סימני מינוס ומטענים ═══════════
+// בטקסט עברי חץ "→" מצביע נגד כיוון הקריאה, וסימן מינוס/מטען "קופץ" לצד הלא נכון.
+// המנגנון עובר על כל הטקסט המוצג (גם טקסט שנוסף בהמשך) ומתקן:
+//   • חץ בתוך משפט עברי  →  הופך ל-"←" (עם כיוון הקריאה)
+//   • ניסוח כימי (Br₂(l) → Br₂(g))  →  נשאר משמאל לימין, כיחידה אחת
+//   • מספר שלילי (−218)  →  המינוס נשאר משמאל למספר
+//   • מטען בסוף נוסחה (Cl⁻)  →  נשאר צמוד לנוסחה מימין
+// כדי למנוע תיקון באלמנט מסוים: class="no-bidi-fix"
+(function(){
+  const LRI='⁦', PDI='⁩', RLM='‏', LRM='‎';
+  const MARKS=/[⁦⁩‏‎]/g;
+  const HEB=/[֐-׿]/;
+  const SUPS='⁰¹²³⁴⁵⁶⁷⁸⁹', SUBS='₀₁₂₃₄₅₆₇₈₉';
+  const SPECIES=new RegExp('^['+SUPS+SUBS+']*(?:\\d+|½)?(?:[A-Z][a-z]?|[\\[\\]()]|['+SUBS+']|\\d)+(?:['+SUPS+']*[⁺⁻])?(?:\\((?:s|l|g|aq)\\))?$');
+  const PARTICLE=/^(?:[enp][⁰⁺⁻]|[αβγ])$/;
+  const done=new WeakMap();
+
+  function clean(t){
+    t=t.replace(/^[\s"'“”]+/,'').replace(/[\s"'“”.,;:!?]+$/,'');
+    let o=(t.match(/\(/g)||[]).length, c=(t.match(/\)/g)||[]).length;
+    while(c>o&&t.endsWith(')')){t=t.slice(0,-1).replace(/[.,;:!?]+$/,'');c--;}
+    while(o>c&&t.startsWith('(')){t=t.slice(1);o--;}
+    return t;
+  }
+  function isSpecies(t){return PARTICLE.test(t)||(SPECIES.test(t)&&/[A-Z]/.test(t));}
+  function isStrong(t){return PARTICLE.test(t)||/\((?:s|l|g|aq)\)|[₀-₉⁺⁻]/.test(t)||(t.match(/[A-Z]/g)||[]).length>=2;}
+
+  function sibText(n,dir){
+    let s=n;
+    for(let k=0;k<4;k++){
+      s=dir<0?s.previousSibling:s.nextSibling;
+      if(!s) return '';
+      if(s.nodeType===1&&/^(BR|DIV|P|TABLE|UL|OL|LI|TD|TR|BUTTON|SVG)$/i.test(s.nodeName)) return '';
+      const t=(s.textContent||'').replace(MARKS,'').trim();
+      if(t) return t;
+    }
+    return '';
+  }
+
+  // עטיפת קטע לא-עברי כיחידת LTR (בלי סימני פיסוק בקצוות)
+  function isolateCore(t){
+    const m=t.match(/^([\s.,;:!?–—]*)([\s\S]*?)([\s.,;:!?–—]*)$/);
+    let core=m[2];
+    if(!core) return t;
+    return m[1]+LRI+core+PDI+m[3];
+  }
+  function fixPlain(seg){
+    // מספרים שליליים ומטענים – מחוץ לניסוחים כימיים
+    seg=seg.replace(/−\d[\d.,]*\d(?:\s?°C)?|−\d(?:\s?°C)?/g, m=>LRI+m+PDI);
+    seg=seg.replace(/([⁺⁻])(?![A-Za-z(⁺⁻])/g, '$1'+LRM);
+    return seg;
+  }
+
+  function fixText(v,node){
+    const lead=v.match(/^\s*/)[0], trail=v.match(/\s*$/)[0];
+    const body=v.slice(lead.length, v.length-trail.length);
+    if(!body) return v;
+    const hasHeb=HEB.test(body)||/[←⇐]/.test(body);   // "←" קיים = הכותב כבר התכוון לזרימה מימין לשמאל
+    const arrowsOnly=/^[→⇒\s]+$/.test(body);
+
+    if(!hasHeb&&!arrowsOnly){
+      // קטע ללא עברית: נוסחה / מספר / ניסוח – יחידת LTR אחת
+      if(/[\d−⁺⁻→⇌⇒+=<>]/.test(body)) return lead+isolateCore(body)+trail;
+      return v;
+    }
+
+    // איתור חיצים והחלטה: ניסוח כימי (נשאר) או חץ בתוך משפט (מתהפך)
+    const arrows=[]; const re=/[→⇒]/g; let m;
+    while((m=re.exec(body))){
+      const i=m.index;
+      let L=body.slice(0,i), R=body.slice(i+1);
+      const lAdj=L.replace(/\s+$/,'').slice(-1), rAdj=R.replace(/^\s+/,'')[0];
+      if(lAdj==='('&&rAdj===')') continue;                 // "(→)" – חץ כסמל, לא נוגעים
+      let lctx=L.trim()?L:sibText(node,-1), rctx=R.trim()?R:sibText(node,1);
+      if(!lctx.trim()||!rctx.trim()) continue;              // חץ בקצה (כפתור "→ הקודם") – לא נוגעים
+      const lt=clean((lctx.match(/([^\s+]+)[\s+]*$/)||['',''])[1]);
+      const rt=clean((rctx.match(/^[\s+]*([^\s+]+)/)||['',''])[1]);
+      const eq=L.trim()&&R.trim()&&isSpecies(lt)&&isSpecies(rt)&&(isStrong(lt)||isStrong(rt));
+      const nearHeb=HEB.test(lctx.replace(/\s+$/,'').slice(-12))||HEB.test(rctx.replace(/^\s+/,'').slice(0,12))||hasHeb;
+      arrows.push({i,eq,flip:!eq&&nearHeb,ch:m[0]});
+    }
+
+    // גבולות "איים" של ניסוחים כימיים
+    const islands=[];
+    arrows.filter(a=>a.eq).forEach(a=>{
+      let s=a.i, e=a.i+1;
+      while(s>0){
+        const ch=body[s-1];
+        if(HEB.test(ch)) break;
+        if(/[,;:]/.test(ch)&&/\s/.test(body[s]||' ')) break;
+        if(ch==='.'&&/\s/.test(body[s]||' ')) break;
+        if(arrows.some(x=>x.flip&&x.i===s-1)) break;
+        s--;
+      }
+      while(e<body.length){
+        const ch=body[e];
+        if(HEB.test(ch)) break;
+        if(/[,;:.]/.test(ch)&&(e+1>=body.length||/\s/.test(body[e+1]))) break;
+        if(arrows.some(x=>x.flip&&x.i===e)) break;
+        e++;
+      }
+      // קיצוץ רווחים, מקפים וסוגריים לא מאוזנים בקצוות
+      while(s<a.i&&/[\s\-–—,;:.]/.test(body[s])) s++;
+      while(e>a.i+1&&/[\s\-–—,;:.]/.test(body[e-1])) e--;
+      let seg=body.slice(s,e);
+      let o=(seg.match(/\(/g)||[]).length, c=(seg.match(/\)/g)||[]).length;
+      while(o>c&&body[s]==='('){s++;o--;while(s<a.i&&/\s/.test(body[s]))s++;}
+      while(c>o&&body[e-1]===')'){e--;c--;while(e>a.i+1&&/[\s.,;:]/.test(body[e-1]))e--;}
+      const last=islands[islands.length-1];
+      if(last&&s<=last[1]) last[1]=Math.max(last[1],e); else islands.push([s,e]);
+    });
+
+    let out='', pos=0;
+    const plain=(from,to)=>{
+      let seg='', p=from;
+      arrows.filter(a=>a.flip&&a.i>=from&&a.i<to).forEach(a=>{
+        seg+=fixPlain(body.slice(p,a.i))+RLM+(a.ch==='⇒'?'⇐':'←')+RLM; p=a.i+1;
+      });
+      return seg+fixPlain(body.slice(p,to));
+    };
+    islands.forEach(([s,e])=>{ out+=plain(pos,s)+LRI+body.slice(s,e)+PDI; pos=e; });
+    out+=plain(pos,body.length);
+    // חיצים "←" קיימים בטקסט עברי – לוודא שהם נשארים בזרימת הקריאה
+    out=out.replace(/(^|[^‏])([←⇐])(?!‏)/g,(x,a,b)=>a+RLM+b+RLM);
+    return lead+out+trail;
+  }
+
+  function fixNode(n){
+    const v=n.nodeValue;
+    if(!v||done.get(n)===v) return;
+    if(!/[→⇒←⇐−⁺⁻⇌]|\d/.test(v)){done.set(n,v);return;}
+    const p=n.parentElement;
+    if(!p||p.closest('script,style,textarea,select,svg,code,pre,[contenteditable],.no-bidi-fix,.ckb,.chem-input')) return;
+    if(getComputedStyle(p).direction!=='rtl'){done.set(n,v);return;}
+    let out;
+    try{ out=fixText(v.replace(MARKS,''),n); }catch(e){ out=v; }
+    done.set(n,out);
+    if(out!==v) n.nodeValue=out;
+  }
+  function walk(root){
+    if(root.nodeType===3){fixNode(root);return;}
+    if(root.nodeType!==1) return;
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT); const list=[]; let n;
+    while((n=w.nextNode())) list.push(n);
+    list.forEach(fixNode);
+  }
+  function start(){
+    walk(document.body);
+    new MutationObserver(muts=>{
+      muts.forEach(mu=>{
+        if(mu.type==='characterData') fixNode(mu.target);
+        else mu.addedNodes.forEach(walk);
+      });
+    }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  }
+  window.__bidiFixText=fixText;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
+
 </script>
 
 <!-- Formula Sheet Modal -->
