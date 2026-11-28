@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovIQ Epic Chemistry – העמק האפור</title>
+<meta name="description" content="משחק הישרדות ללימוד כימיה 5 יח&quot;ל: בנו מעבדה ניידת, פתרו חדר בריחה והחזירו את הכימיה לעולם.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<header id="hud" hidden>
+  <button class="hud-id" id="hudProfile" title="פרופיל הבוגר">
+    <span id="hudTeam"></span>
+    <span><b id="hudName"></b><small id="hudRank"></small></span>
+  </button>
+  <div class="hud-xp" title="נקודות ניסיון"><div id="hudBar"></div><span id="hudXp"></span></div>
+  <div class="hud-cr" title="קרדיטים לציוד">🔩 <b id="hudCr">0</b></div>
+  <nav>
+    <button data-go="map">🗺️<span>מפה</span></button>
+    <button data-go="build">🚚<span>מעבדה</span></button>
+    <button data-go="arena">🏆<span>זירה</span></button>
+    <button data-go="atom">🤖<span>אטום</span></button>
+  </nav>
+</header>
+<main id="stage" aria-live="polite"></main>
+<div id="toast" role="status"></div>
+<script src="data.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
